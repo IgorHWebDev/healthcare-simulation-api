@@ -10,12 +10,17 @@ import os
 import uuid
 from pydantic import BaseModel
 
-from models.encryption import (
+from src.models.encryption import (
     EncryptionRequest,
     EncryptionResponse,
     HealthResponse,
     MetricsResponse,
-    Error
+    Error,
+    generate_key_pair,
+    load_private_key,
+    load_public_key,
+    sign_message,
+    verify_signature
 )
 from services.quantum_service import QuantumService
 from services.metrics_service import MetricsService
