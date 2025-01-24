@@ -1,0 +1,138 @@
+openapi: 3.1.0
+info:
+  title: Healthcare Simulation API
+  description: |
+    Interactive medical scenario simulation and validation API for healthcare training.
+    
+    Features:
+    - Medical scenario simulations
+    - Protocol validation
+    - Real-time feedback
+    - Multi-language support
+  version: v1.0.0
+  contact:
+    name: Healthcare Simulation Team
+    email: support@iqhis.dev
+  x-logo:
+    url: https://iqhis.dev/logo.png
+    backgroundColor: "#FFFFFF"
+  x-rapidapi-name: healthcare-simulation
+  x-rapidapi-category: Healthcare & Medical
+
+servers:
+  - url: https://healthcare-simulation.p.rapidapi.com
+    description: RapidAPI Healthcare Simulation Service
+
+paths:
+  /simulate:
+    post:
+      summary: Simulate Medical Scenario
+      description: Process an interactive medical simulation scenario with real-time feedback
+      operationId: simulateScenario
+      tags: ["Simulation"]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: ["message"]
+              properties:
+                message:
+                  type: string
+                  description: Scenario description or next action
+                  example: "Start cardiac arrest simulation"
+      responses:
+        '200':
+          description: Successful simulation response
+          content:
+            application/json:
+              schema:
+                type: object
+                required: ["scenario_id", "response"]
+                properties:
+                  scenario_id:
+                    type: string
+                    description: Unique identifier for the simulation session
+                  response:
+                    type: string
+                    description: AI-generated response with next steps
+                  next_steps:
+                    type: array
+                    items:
+                      type: string
+                    description: List of recommended next actions
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+
+  /validate:
+    post:
+      summary: Validate Medical Action
+      description: Validate healthcare decisions against standard protocols
+      operationId: validateAction
+      tags: ["Validation"]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: ["action"]
+              properties:
+                action:
+                  type: string
+                  description: Medical action to validate
+                  example: "Start chest compressions"
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                type: object
+                required: ["is_valid", "feedback"]
+                properties:
+                  is_valid:
+                    type: boolean
+                    description: Whether the action is valid
+                  feedback:
+                    type: string
+                    description: Detailed feedback about the action
+                  score:
+                    type: number
+                    format: float
+                    description: Protocol adherence score (0-100)
+
+tags:
+  - name: Simulation
+    description: Medical scenario simulation endpoints
+  - name: Validation
+    description: Protocol validation endpoints
+
+components:
+  securitySchemes:
+    RapidAPIKey:
+      type: apiKey
+      in: header
+      name: X-RapidAPI-Key
+      description: RapidAPI subscription key
+
+security:
+  - RapidAPIKey: []
+
+x-rapidapi-pricing:
+  - plan: Basic
+    price: 0
+    quota: 100
+    unit: requests per day
+  - plan: Pro
+    price: 10
+    quota: 1000
+    unit: requests per day 

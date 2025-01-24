@@ -1,0 +1,47 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "alert_rules.yml"
+
+scrape_configs:
+  - job_name: 'quantum-agent'
+    static_configs:
+      - targets: ['quantum-agent:8000']
+    metrics_path: '/metrics'
+    scheme: 'http'
+
+  - job_name: 'zeta-quantum'
+    static_configs:
+      - targets: ['zeta-quantum:8000']
+    metrics_path: '/metrics'
+    scheme: 'http'
+
+  - job_name: 'hpc-orchestrator'
+    static_configs:
+      - targets: ['hpc-orchestrator:8001']
+    metrics_path: '/metrics'
+    scheme: 'http'
+
+  - job_name: 'autogen-coordinator'
+    static_configs:
+      - targets: ['autogen-coordinator:8002']
+    metrics_path: '/metrics'
+    scheme: 'http'
+
+  - job_name: 'ollama'
+    static_configs:
+      - targets: ['ollama:11434']
+    metrics_path: '/metrics'
+    scheme: 'http'
+
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - 'alertmanager:9093' 

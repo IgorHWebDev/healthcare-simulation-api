@@ -1,0 +1,113 @@
+{
+  "info": {
+    "_postman_id": "7b3c9d2e-4f5a-4b6c-8a9d-1f2e3d4c5b6a",
+    "name": "Healthcare Simulation API",
+    "description": "API for healthcare simulation scenarios using Ollama multi-model support",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Simulate Healthcare Scenario",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"👨‍⚕️ פרמדיק מתמודד עם דום לב\",\n  \"actors\": [\n    \"👨‍⚕️ פרמדיק (Paramedic)\",\n    \"🤒 חולה (Patient)\",\n    \"👨‍👩‍👦 בן משפחה (Family Member)\"\n  ],\n  \"steps\": [\n    {\n      \"step\": 1,\n      \"description\": \"🚨 הערכת מצב ראשונית\",\n      \"actions\": [\n        {\n          \"action\": \"בדיקת הכרה\",\n          \"details\": \"קריאה למטופל וטלטול עדין של הכתפיים\",\n          \"references\": [\"AHA ACLS Guidelines 2020 - Initial Assessment\"],\n          \"vital_signs\": {\n            \"pre_assessment\": {\n              \"❤️ דופק\": \"לא נמוש\",\n              \"🫁 נשימות\": \"אין\",\n              \"🌡️ חום\": \"36.5\",\n              \"⚡ לחץ דם\": \"לא נמדד\"\n            }\n          }\n        }\n      ]\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/v1/healthcare/simulate",
+          "host": ["{{base_url}}"],
+          "path": ["v1", "healthcare", "simulate"]
+        },
+        "description": "Process healthcare simulation scenarios using Ollama models"
+      },
+      "response": []
+    },
+    {
+      "name": "Validate Healthcare Protocol",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"protocol_type\": \"ACLS\",\n  \"actions\": [\n    \"Initial assessment\",\n    \"Check responsiveness\",\n    \"Call for help\",\n    \"Check pulse\"\n  ],\n  \"patient_context\": {\n    \"age\": 65,\n    \"presenting_condition\": \"Unresponsive patient\",\n    \"contraindications\": []\n  }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/v1/healthcare/validate",
+          "host": ["{{base_url}}"],
+          "path": ["v1", "healthcare", "validate"]
+        },
+        "description": "Validate medical decisions against standard protocols"
+      },
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test(\"Status code is 200\", function () {",
+          "    pm.response.to.have.status(200);",
+          "});",
+          "",
+          "pm.test(\"Response has required fields\", function () {",
+          "    var jsonData = pm.response.json();",
+          "    if (pm.request.url.path.includes('simulate')) {",
+          "        pm.expect(jsonData).to.have.property('scenario_id');",
+          "        pm.expect(jsonData).to.have.property('current_state');",
+          "        pm.expect(jsonData).to.have.property('next_steps');",
+          "        pm.expect(jsonData).to.have.property('feedback');",
+          "    } else if (pm.request.url.path.includes('validate')) {",
+          "        pm.expect(jsonData).to.have.property('is_valid');",
+          "        pm.expect(jsonData).to.have.property('score');",
+          "    }",
+          "});"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "api_key",
+      "value": "your_api_key_here",
+      "type": "string"
+    }
+  ]
+} 

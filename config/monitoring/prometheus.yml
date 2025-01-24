@@ -1,0 +1,49 @@
+# IQHIS Monitoring Configuration
+# Environment: Production
+# Version: 0.1.0-sprint.0
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['localhost:9093']
+
+rule_files:
+  - "rules/api_alerts.yml"
+  - "rules/security_alerts.yml"
+
+scrape_configs:
+  - job_name: 'iqhis_api'
+    metrics_path: '/v1/metrics'
+    scheme: 'https'
+    basic_auth:
+      username: ${PROMETHEUS_USER}
+      password: ${PROMETHEUS_PASSWORD}
+    static_configs:
+      - targets: ['api.iqhis.com']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'production'
+
+  - job_name: 'nginx'
+    static_configs:
+      - targets: ['localhost:9113']
+    metrics_path: '/metrics'
+
+  - job_name: 'node_exporter'
+    static_configs:
+      - targets: ['localhost:9100']
+
+  - job_name: 'quantum_metrics'
+    metrics_path: '/v1/quantum/metrics'
+    scheme: 'https'
+    oauth2:
+      client_id: ${METRICS_CLIENT_ID}
+      client_secret: ${METRICS_CLIENT_SECRET}
+      token_url: 'https://api.iqhis.com/v1/auth/token'
+    static_configs:
+      - targets: ['api.iqhis.com'] 

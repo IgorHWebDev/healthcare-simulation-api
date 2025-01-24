@@ -1,0 +1,71 @@
+groups:
+  - name: quantum_encryption
+    rules:
+      - alert: QuantumKeyRotationDelay
+        expr: time() - quantum_last_key_rotation > 86400  # 24 hours in seconds
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Quantum key rotation delayed"
+          description: "Key rotation has not occurred in the last 24 hours"
+
+      - alert: QuantumAgentDown
+        expr: up{job="quantum-agent"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Quantum Agent is down"
+          description: "Quantum encryption service is not responding"
+
+  - name: autogen_coordinator
+    rules:
+      - alert: AutogenCoordinatorDown
+        expr: up{job="autogen-coordinator"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "AutoGen Coordinator is down"
+          description: "AutoGen coordination service is not responding"
+
+      - alert: HighModelLatency
+        expr: autogen_model_response_time_seconds > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High model response time"
+          description: "Model responses are taking longer than 10 seconds"
+
+  - name: ollama
+    rules:
+      - alert: OllamaDown
+        expr: up{job="ollama"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Ollama service is down"
+          description: "Local LLM service is not responding"
+
+  - name: compliance
+    rules:
+      - alert: HighFailedEncryption
+        expr: rate(quantum_encryption_failures_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High rate of encryption failures"
+          description: "Multiple encryption failures detected in the last 5 minutes"
+
+      - alert: ComplianceCheckFailure
+        expr: compliance_check_failures_total > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Compliance check failure detected"
+          description: "One or more compliance checks have failed" 

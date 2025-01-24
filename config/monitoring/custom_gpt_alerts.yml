@@ -1,0 +1,92 @@
+groups:
+  - name: custom_gpt_alerts
+    rules:
+      - alert: HighCustomGPTResponseTime
+        expr: histogram_quantile(0.95, rate(custom_gpt_response_time_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Custom GPT response time"
+          description: "95th percentile of Custom GPT response time is above 2 seconds"
+
+      - alert: HighCustomGPTErrorRate
+        expr: rate(custom_gpt_errors_total[5m]) / rate(custom_gpt_requests_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Custom GPT error rate"
+          description: "Error rate is above 5% in the last 5 minutes"
+
+      - alert: CustomGPTComplianceFailure
+        expr: increase(custom_gpt_compliance_checks{result="failed"}[15m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Custom GPT compliance check failure"
+          description: "One or more compliance checks have failed in the last 15 minutes"
+
+      - alert: HighCustomGPTDataVolume
+        expr: rate(custom_gpt_data_volume_bytes_sum[5m]) > 500000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Custom GPT data volume"
+          description: "Data volume processed is above 500KB/s"
+
+      - alert: CustomGPTEncryptionFailure
+        expr: increase(custom_gpt_encryption_operations{status="failed"}[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Custom GPT encryption failure"
+          description: "One or more encryption operations have failed in the last 5 minutes"
+
+      - alert: CustomGPTHighRequestRate
+        expr: rate(custom_gpt_requests_total[5m]) > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Custom GPT request rate"
+          description: "Request rate is above 100 requests per second"
+
+      - alert: CustomGPTAuthenticationFailure
+        expr: increase(custom_gpt_errors_total{error_type="authentication"}[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Custom GPT authentication failure"
+          description: "One or more authentication failures detected in the last 5 minutes"
+
+      - alert: CustomGPTDataValidationFailure
+        expr: increase(custom_gpt_errors_total{error_type="validation"}[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Custom GPT data validation failures"
+          description: "More than 10 data validation failures in the last 5 minutes"
+
+      - alert: CustomGPTHighSeverityError
+        expr: increase(custom_gpt_errors_total{severity="critical"}[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Custom GPT critical error"
+          description: "One or more critical errors detected in the last 5 minutes"
+
+      - alert: CustomGPTHealthCheckFailure
+        expr: up{job="custom_gpt_metrics"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Custom GPT health check failure"
+          description: "Custom GPT metrics endpoint is not responding" 

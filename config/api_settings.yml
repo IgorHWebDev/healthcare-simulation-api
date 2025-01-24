@@ -1,0 +1,120 @@
+openapi: 3.1.0
+info:
+  title: IQHIS API
+  version: 0.1.0-sprint.0
+
+servers:
+  - url: https://localhost:8000/v1
+    description: Local Development (Sprint 0)
+  - url: https://localhost:8001/v1
+    description: Local Testing
+  - url: https://api.iqhis.com/v1
+    description: Public Production API
+  - url: https://staging.api.iqhis.com/v1
+    description: Public Staging API
+
+security:
+  - bearerAuth: []  # Primary security scheme
+  - {}  # Empty security requirement for public endpoints
+
+paths:
+  /quantum/encrypt:
+    post:
+      summary: Encrypt data using quantum-resistant encryption
+      security:
+        - bearerAuth: []  # Requires authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - data
+              properties:
+                data:
+                  type: string
+                  maxLength: 10485760
+                key_id:
+                  type: string
+                  pattern: ^qk_\d{4}_\d{2}_\d{2}.*$
+
+  /quantum/health:
+    get:
+      summary: Get quantum system health status
+      security: []  # Public endpoint
+      responses:
+        '200':
+          description: Health check response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [healthy, degraded, unhealthy]
+
+  /metrics:
+    get:
+      summary: Get system metrics
+      security:
+        - bearerAuth: []  # Requires authentication
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for authentication (HIPAA-compliant)
+
+# Client Configuration
+client_settings:
+  base_url: https://api.iqhis.com/v1  # Updated to public URL
+  timeout: 30
+  retry:
+    max_attempts: 3
+    backoff_factor: 2
+  ssl:
+    verify: true
+    cert_path: ./certs/client.pem
+  rate_limiting:
+    max_requests_per_minute: 60
+    burst: 10
+  cors:
+    allowed_origins: ["*"]
+    allowed_methods: ["GET", "POST", "OPTIONS"]
+    allowed_headers: ["Authorization", "Content-Type"]
+    max_age: 86400
+  auth:
+    type: bearer
+    token_endpoint: /auth/token
+    client_id: ${CLIENT_ID}
+    client_secret: ${CLIENT_SECRET}
+
+# Environment-specific settings
+environments:
+  development:
+    base_url: https://localhost:8000/v1
+    ssl_verify: false
+    cors:
+      allowed_origins: ["*"]
+  testing:
+    base_url: https://localhost:8001/v1
+    ssl_verify: true
+    cors:
+      allowed_origins: ["https://test.iqhis.com"]
+  staging:
+    base_url: https://staging.api.iqhis.com/v1
+    ssl_verify: true
+    cors:
+      allowed_origins: ["https://staging.iqhis.com"]
+  production:
+    base_url: https://api.iqhis.com/v1
+    ssl_verify: true
+    cors:
+      allowed_origins: ["https://iqhis.com", "https://www.iqhis.com"]
+    rate_limiting:
+      max_requests_per_minute: 120
+      burst: 20 

@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/ssl:/etc/nginx/ssl
+      - ./nginx/www:/var/www/html
+    depends_on:
+      - iqhis-api
+
+  iqhis-api:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    environment:
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - API_KEY=${API_KEY}
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DEBUG=false
+      - CORS_ORIGINS=["https://chat.openai.com"]
+    expose:
+      - 8000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/quantum/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3 

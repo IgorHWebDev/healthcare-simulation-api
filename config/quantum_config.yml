@@ -1,0 +1,64 @@
+---
+# Quantum Agent Configuration
+
+# Algorithm Settings
+algorithm:
+  name: "CRYSTALS-Kyber1024"
+  mode: "hybrid"  # Uses both quantum-resistant and classical encryption
+  parameters:
+    security_level: 5  # Maximum security level
+    key_length: 1024
+    performance_target: "M3"  # Optimized for M3 architecture
+
+# Encryption Settings
+encryption:
+  key_rotation_interval: "24h"  # Key rotation interval in hours
+  session_timeout: "1h"  # Session key timeout
+  max_key_uses: 1000  # Maximum number of times a key can be used
+  backup_algorithm: "AES-256-GCM"  # Classical backup algorithm
+
+# Performance Settings
+performance:
+  max_concurrent_ops: 100  # Maximum concurrent encryption operations
+  batch_size: 10  # Number of operations to batch together
+  timeout: 30  # Operation timeout in seconds
+  retry_attempts: 3  # Number of retry attempts for failed operations
+  backoff_factor: 2  # Exponential backoff factor for retries
+
+# Security Settings
+security:
+  audit_logging: true  # Enable detailed audit logging
+  key_backup: true  # Enable key backup
+  integrity_checks: true  # Enable integrity checking
+  tamper_detection: true  # Enable tamper detection
+  compliance:
+    hipaa: true  # HIPAA compliance mode
+    gdpr: true   # GDPR compliance mode
+    fips: true   # FIPS compliance mode
+
+# Monitoring Settings
+monitoring:
+  metrics_interval: 15  # Metrics collection interval in seconds
+  health_check_interval: 30  # Health check interval in seconds
+  alert_thresholds:
+    cpu_usage: 80  # Alert if CPU usage exceeds 80%
+    memory_usage: 80  # Alert if memory usage exceeds 80%
+    error_rate: 0.01  # Alert if error rate exceeds 1%
+    latency: 1000  # Alert if latency exceeds 1000ms
+
+# Logging Settings
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  retention_days: 30  # Log retention period in days
+  include_trace: true  # Include trace information in logs
+
+# API Settings
+api:
+  host: "0.0.0.0"
+  port: 8000
+  rate_limit: 100  # Requests per minute
+  timeout: 30  # API request timeout in seconds
+  cors_origins:
+    - "http://localhost:3000"
+    - "https://api.iqhis.local" 

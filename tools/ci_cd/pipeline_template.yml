@@ -1,0 +1,189 @@
+# Healthcare Software Development CI/CD Pipeline
+# Combines Agile development practices with regulatory compliance requirements
+
+name: healthcare-software-pipeline
+
+# Environment Variables
+variables:
+  REGULATORY_COMPLIANCE_LEVEL: "strict"  # Options: strict, moderate
+  SECURITY_SCAN_LEVEL: "quantum-safe"    # Options: standard, quantum-safe
+  VALIDATION_ENVIRONMENT: "production"    # Options: development, staging, production
+
+# Pipeline Triggers
+trigger:
+  branches:
+    include:
+      - main
+      - feature/*
+      - release/*
+  tags:
+    include:
+      - v*
+
+# Pipeline Stages
+stages:
+  # Development Stage (Agile)
+  - stage: development
+    displayName: "Development Checks"
+    jobs:
+      - job: code_quality
+        steps:
+          - task: static_analysis
+            inputs:
+              level: comprehensive
+              include_security: true
+          
+          - task: dependency_check
+            inputs:
+              scan_type: deep
+              include_transitive: true
+          
+          - task: unit_tests
+            inputs:
+              coverage_threshold: 85
+              include_integration: true
+
+      - job: security_scan
+        steps:
+          - task: quantum_safe_analysis
+            inputs:
+              level: $(SECURITY_SCAN_LEVEL)
+              include_dependencies: true
+          
+          - task: vulnerability_scan
+            inputs:
+              database: latest
+              severity_threshold: medium
+
+  # Documentation and Compliance (Waterfall)
+  - stage: compliance
+    displayName: "Regulatory Compliance"
+    jobs:
+      - job: documentation_check
+        steps:
+          - task: design_controls_verify
+            inputs:
+              template_version: latest
+              completeness_check: true
+          
+          - task: requirements_trace
+            inputs:
+              matrix_update: true
+              verify_links: true
+          
+          - task: risk_management
+            inputs:
+              fmea_update: true
+              hazop_verify: true
+
+      - job: regulatory_validation
+        steps:
+          - task: compliance_check
+            inputs:
+              standards:
+                - ISO_13485
+                - IEC_62304
+                - FDA_GUIDELINES
+              level: $(REGULATORY_COMPLIANCE_LEVEL)
+
+  # Integration and Testing (Hybrid)
+  - stage: integration
+    displayName: "Integration and Testing"
+    jobs:
+      - job: integration_tests
+        steps:
+          - task: system_integration
+            inputs:
+              environment: $(VALIDATION_ENVIRONMENT)
+              include_e2e: true
+          
+          - task: performance_test
+            inputs:
+              load_profile: medical_workflow
+              duration: 1h
+
+      - job: validation_tests
+        steps:
+          - task: clinical_validation
+            inputs:
+              test_suite: comprehensive
+              include_regression: true
+          
+          - task: security_validation
+            inputs:
+              include_penetration: true
+              quantum_resistance: true
+
+  # Release Management (Waterfall)
+  - stage: release
+    displayName: "Release Management"
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - job: release_preparation
+        steps:
+          - task: version_control
+            inputs:
+              update_type: semantic
+              generate_changelog: true
+          
+          - task: documentation_package
+            inputs:
+              include_regulatory: true
+              generate_pdf: true
+
+      - job: deployment
+        steps:
+          - task: deployment_validation
+            inputs:
+              environment: $(VALIDATION_ENVIRONMENT)
+              rollback_plan: true
+          
+          - task: release_approval
+            inputs:
+              require_regulatory: true
+              notify_stakeholders: true
+
+# Post-deployment Monitoring
+  - stage: monitoring
+    displayName: "Post-deployment Monitoring"
+    jobs:
+      - job: health_monitoring
+        steps:
+          - task: performance_metrics
+            inputs:
+              duration: 24h
+              alert_threshold: critical
+          
+          - task: security_monitoring
+            inputs:
+              quantum_threats: true
+              real_time_alerts: true
+          
+          - task: compliance_audit
+            inputs:
+              schedule: daily
+              report_format: regulatory
+
+# Pipeline Settings
+parameters:
+  - name: skip_tests
+    type: boolean
+    default: false
+    displayName: "Skip Tests"
+  
+  - name: compliance_level
+    type: string
+    default: strict
+    displayName: "Compliance Level"
+    values:
+      - strict
+      - moderate
+
+# Notifications
+notifications:
+  - pipeline_completion:
+      recipients:
+        - regulatory_team
+        - development_team
+        - clinical_stakeholders
+      include_reports: true 

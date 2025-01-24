@@ -1,0 +1,124 @@
+# Custom GPT Monitoring Configuration
+
+# Global settings
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# Rule files
+rule_files:
+  - "custom_gpt_alerts.yml"
+
+# Scrape configurations
+scrape_configs:
+  - job_name: 'custom_gpt_metrics'
+    static_configs:
+      - targets: ['iqhis-api:8000']
+    metrics_path: '/metrics'
+    scheme: 'http'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'custom_gpt'
+
+# Custom metrics
+custom_metrics:
+  - name: custom_gpt_requests_total
+    type: counter
+    help: "Total number of requests from Custom GPT"
+    labels:
+      - endpoint
+      - status
+      - gpt_version
+
+  - name: custom_gpt_encryption_operations
+    type: counter
+    help: "Number of encryption operations initiated by Custom GPT"
+    labels:
+      - status
+      - encryption_type
+      - data_type
+
+  - name: custom_gpt_response_time_seconds
+    type: histogram
+    help: "Response time for Custom GPT requests"
+    buckets: [0.1, 0.5, 1.0, 2.0, 5.0]
+    labels:
+      - endpoint
+      - status
+
+  - name: custom_gpt_errors_total
+    type: counter
+    help: "Total number of errors in Custom GPT requests"
+    labels:
+      - error_type
+      - endpoint
+      - severity
+
+  - name: custom_gpt_data_volume_bytes
+    type: histogram
+    help: "Volume of data processed in Custom GPT requests"
+    buckets: [1000, 10000, 100000, 1000000]
+    labels:
+      - endpoint
+      - data_type
+
+  - name: custom_gpt_compliance_checks
+    type: counter
+    help: "Number of compliance checks performed"
+    labels:
+      - check_type
+      - result
+      - severity
+
+# Alert thresholds
+thresholds:
+  response_time:
+    warning: 2.0  # seconds
+    critical: 5.0  # seconds
+  error_rate:
+    warning: 0.05  # 5%
+    critical: 0.10  # 10%
+  data_volume:
+    warning: 500000  # bytes
+    critical: 1000000  # bytes
+
+# Dashboards
+dashboards:
+  - name: "Custom GPT Overview"
+    panels:
+      - title: "Request Rate"
+        type: "graph"
+        metric: "rate(custom_gpt_requests_total[5m])"
+      - title: "Error Rate"
+        type: "graph"
+        metric: "rate(custom_gpt_errors_total[5m])"
+      - title: "Response Time"
+        type: "heatmap"
+        metric: "custom_gpt_response_time_seconds"
+      - title: "Data Volume"
+        type: "graph"
+        metric: "rate(custom_gpt_data_volume_bytes_sum[5m])"
+      - title: "Compliance Status"
+        type: "gauge"
+        metric: "custom_gpt_compliance_checks{result='failed'}"
+
+# Logging
+logging:
+  level: info
+  format: json
+  output: stdout
+  fields:
+    service: custom_gpt_monitoring
+    environment: production
+
+# Retention
+retention:
+  time: 15d
+  size: 50GB
+
+# Security
+security:
+  encryption: true
+  authentication: true
+  audit_logging: true 

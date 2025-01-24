@@ -1,0 +1,135 @@
+version: '3.8'
+
+services:
+  iqhis-main:
+    build:
+      context: .
+      dockerfile: Dockerfile.iqhis
+    volumes:
+      - ./config:/app/config
+      - ./data:/app/data
+    depends_on:
+      - quantum-agent
+      - autogen-coordinator
+      - zeta-quantum
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks:
+      - iqhis-net
+
+  quantum-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.quantum
+    environment:
+      - QUANTUM_ALGORITHM=Kyber1024
+      - KEY_ROTATION_HOURS=24
+      - METAL_ENABLED=true
+    volumes:
+      - ./quantum/keys:/app/keys
+    networks:
+      - iqhis-net
+
+  zeta-quantum:
+    build:
+      context: .
+      dockerfile: Dockerfile.zeta
+    environment:
+      - QISKIT_BACKEND=aer_simulator
+      - NUM_QUBITS=4
+      - METAL_ENABLED=true
+      - HPC_ENABLED=true
+    volumes:
+      - ./quantum/circuits:/app/circuits
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks:
+      - iqhis-net
+
+  autogen-coordinator:
+    build:
+      context: .
+      dockerfile: Dockerfile.autogen
+    environment:
+      - MODEL_CONFIG_PATH=/app/config/autogen.yaml
+      - METAL_ENABLED=true
+    depends_on:
+      - quantum-agent
+      - zeta-quantum
+      - ollama
+    networks:
+      - iqhis-net
+
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ./models:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks:
+      - iqhis-net
+
+  hpc-orchestrator:
+    build:
+      context: .
+      dockerfile: Dockerfile.hpc
+    environment:
+      - MAX_PARALLEL_CIRCUITS=1000
+      - BATCH_SIZE=256
+      - OPTIMIZATION_LEVEL=3
+    volumes:
+      - ./hpc:/app/hpc
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks:
+      - iqhis-net
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./monitoring/prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - iqhis-net
+
+  grafana:
+    image: grafana/grafana:latest
+    volumes:
+      - ./monitoring/grafana:/etc/grafana/provisioning
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    networks:
+      - iqhis-net
+
+volumes:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  iqhis-net:
+    driver: bridge 

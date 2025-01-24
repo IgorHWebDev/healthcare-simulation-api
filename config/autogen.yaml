@@ -1,0 +1,189 @@
+# AutoGen Configuration for IQHIS
+# Defines model selection, healthcare agents, and security settings
+
+version: '1.0'
+
+# Model Configuration
+models:
+  local:
+    healthcare:
+      provider: ollama
+      models:
+        - name: llama2-medical
+          type: base
+          context_length: 4096
+          temperature: 0.7
+        - name: med-mistral
+          type: specialized
+          context_length: 8192
+          temperature: 0.5
+    general:
+      provider: huggingface
+      models:
+        - name: mistral-7b
+          type: base
+          context_length: 4096
+  
+  remote:
+    provider: openai
+    models:
+      - name: gpt-4
+        type: advanced
+        context_length: 8192
+      - name: gpt-3.5-turbo
+        type: base
+        context_length: 4096
+
+# Agent Configuration
+agents:
+  healthcare_assistant:
+    name: "Healthcare Assistant"
+    description: "Specialized medical knowledge agent"
+    default_model: "llama2-medical"
+    fallback_model: "gpt-4"
+    capabilities:
+      - medical_diagnosis
+      - treatment_planning
+      - drug_interaction
+      - clinical_guidelines
+    compliance:
+      hipaa: true
+      gdpr: true
+      fda: true
+  
+  general_assistant:
+    name: "General Assistant"
+    description: "General purpose support agent"
+    default_model: "mistral-7b"
+    fallback_model: "gpt-3.5-turbo"
+    capabilities:
+      - general_query
+      - documentation
+      - code_generation
+      - system_support
+
+  user_proxy:
+    name: "User Proxy"
+    description: "Human-in-the-loop interface"
+    capabilities:
+      - request_clarification
+      - validation
+      - feedback
+      - oversight
+
+# Security Configuration
+security:
+  encryption:
+    quantum_safe: true
+    algorithm: "Kyber1024"
+    key_rotation: "24h"
+  
+  audit:
+    enabled: true
+    log_level: "detailed"
+    retention: "7y"
+    phi_tracking: true
+  
+  consent:
+    required: true
+    expiry: "1y"
+    revocation_enabled: true
+
+# Model Factory Configuration
+model_factory:
+  selection_criteria:
+    - task_type
+    - medical_specialty
+    - urgency_level
+    - data_sensitivity
+  
+  fallback_rules:
+    - condition: "accuracy_below_threshold"
+      threshold: 0.85
+      action: "switch_to_fallback"
+    - condition: "latency_above_threshold"
+      threshold: 2000
+      action: "switch_to_local"
+    - condition: "error_rate_above_threshold"
+      threshold: 0.05
+      action: "human_review"
+
+# Performance Optimization
+optimization:
+  m3_acceleration: true
+  batch_processing: true
+  caching:
+    enabled: true
+    ttl: "1h"
+    max_size: "10GB"
+
+# Healthcare Domain Configuration
+healthcare:
+  specialties:
+    - cardiology
+    - radiology
+    - pathology
+    - genomics
+    - immunology
+  
+  validation:
+    clinical_review: true
+    confidence_threshold: 0.95
+    uncertainty_handling: "escalate_to_human"
+  
+  terminology:
+    snomed_ct: true
+    icd10: true
+    loinc: true
+    rxnorm: true
+
+# Monitoring and Metrics
+monitoring:
+  performance:
+    latency_threshold: 2000  # ms
+    success_rate_threshold: 0.99
+    validation_rate_threshold: 0.95
+  
+  health_checks:
+    interval: "1m"
+    timeout: "10s"
+  
+  alerts:
+    channels:
+      - type: "log"
+        level: "warning"
+      - type: "metrics"
+        endpoint: "/metrics"
+
+# Integration Points
+integration:
+  quantum_base_agent:
+    enabled: true
+    encryption_required: true
+  
+  blockchain_agent:
+    enabled: true
+    consensus_required: true
+  
+  database_agent:
+    enabled: true
+    phi_encryption: true
+
+# Validation Configuration
+validation:
+  clinical:
+    accuracy_threshold: 0.95
+    uncertainty_threshold: 0.15
+    specialties:
+      cardiology:
+        accuracy_threshold: 0.98
+      pathology:
+        accuracy_threshold: 0.97
+      radiology:
+        accuracy_threshold: 0.96
+
+  compliance:
+    hipaa_required: true
+    gdpr_required: true
+    audit_logging: true
+    consent_required: true 

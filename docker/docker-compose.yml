@@ -1,0 +1,147 @@
+version: '3.8'
+
+services:
+  quantum-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.quantum
+    environment:
+      - QUANTUM_ALGORITHM=CRYSTALS-Kyber1024
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./agents/quantum:/app/agents/quantum
+      - ./config:/app/config
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    ports:
+      - "8000:8000"
+
+  autogen-coordinator:
+    build:
+      context: .
+      dockerfile: Dockerfile.autogen
+    environment:
+      - MODEL_CONFIG_PATH=/app/config/model_config.yml
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./agents/autogen:/app/agents/autogen
+      - ./config:/app/config
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8001/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    ports:
+      - "8001:8001"
+    depends_on:
+      - quantum-agent
+
+  zeta-quantum:
+    build:
+      context: .
+      dockerfile: Dockerfile.zeta
+    environment:
+      - QISKIT_BACKEND=aer_simulator
+      - HPC_ENABLED=true
+      - CUDA_VISIBLE_DEVICES=all
+    volumes:
+      - ./agents/quantum:/app/agents/quantum
+      - ./config:/app/config
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8002/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    ports:
+      - "8002:8002"
+
+  hpc-orchestrator:
+    build:
+      context: .
+      dockerfile: Dockerfile.hpc
+    environment:
+      - MAX_PARALLEL_CIRCUITS=100
+      - BATCH_SIZE=10
+      - CUDA_VISIBLE_DEVICES=all
+    volumes:
+      - ./hpc:/app/hpc
+      - ./config:/app/config
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8003/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    ports:
+      - "8003:8003"
+
+  ollama:
+    image: ollama/ollama:latest
+    environment:
+      - OLLAMA_MODELS=llama2,codellama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./monitoring/prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - "9090:9090"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--tries=1", "http://localhost:9090/-/healthy", "-O", "/dev/null"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  grafana:
+    image: grafana/grafana:latest
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  ollama_data: 

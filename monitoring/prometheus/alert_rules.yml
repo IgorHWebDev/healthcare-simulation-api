@@ -1,0 +1,138 @@
+groups:
+  - name: quantum_encryption
+    rules:
+      - alert: QuantumKeyRotationDelay
+        expr: time() - quantum_key_last_rotation > 86400
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Quantum key rotation delayed"
+          description: "Key rotation has not occurred in the last 24 hours"
+
+      - alert: QuantumAgentDown
+        expr: up{job="quantum-agent"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Quantum Agent is down"
+          description: "Quantum Agent has been down for more than 1 minute"
+
+  - name: zeta_quantum
+    rules:
+      - alert: ZetaQuantumAgentDown
+        expr: up{job="zeta-quantum"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Zeta Quantum Agent is down"
+          description: "Zeta Quantum Agent has been down for more than 1 minute"
+
+      - alert: HighQuantumStreamLatency
+        expr: quantum_stream_latency_seconds > 0.002
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High quantum stream latency"
+          description: "Quantum stream latency is above 2ms threshold"
+
+      - alert: QuantumCircuitErrors
+        expr: rate(quantum_circuit_errors_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High quantum circuit error rate"
+          description: "Quantum circuit error rate is above 10% threshold"
+
+  - name: hpc_orchestrator
+    rules:
+      - alert: HPCOrchestratorDown
+        expr: up{job="hpc-orchestrator"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "HPC Orchestrator is down"
+          description: "HPC Orchestrator has been down for more than 1 minute"
+
+      - alert: HighGPUUtilization
+        expr: gpu_utilization > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High GPU utilization"
+          description: "GPU utilization is above 90% for 5 minutes"
+
+      - alert: CircuitQueueFull
+        expr: active_circuits >= 1000
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Circuit queue is full"
+          description: "Maximum number of parallel circuits reached"
+
+  - name: autogen_coordinator
+    rules:
+      - alert: AutogenCoordinatorDown
+        expr: up{job="autogen-coordinator"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "AutoGen Coordinator is down"
+          description: "AutoGen Coordinator has been down for more than 1 minute"
+
+      - alert: HighModelLatency
+        expr: model_response_time_seconds > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High model response time"
+          description: "Model response time is above 10 seconds"
+
+  - name: compliance
+    rules:
+      - alert: HighFailedEncryption
+        expr: rate(encryption_failures_total[5m]) > 0.01
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High encryption failure rate"
+          description: "Encryption failure rate is above 1% threshold"
+
+      - alert: ComplianceCheckFailure
+        expr: compliance_check_failures > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Compliance check failure"
+          description: "One or more compliance checks have failed"
+
+  - name: performance
+    rules:
+      - alert: HighMemoryUsage
+        expr: memory_usage_bytes / memory_total_bytes * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is above 90% for 5 minutes"
+
+      - alert: HighCPUUsage
+        expr: cpu_usage_percent > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is above 90% for 5 minutes" 

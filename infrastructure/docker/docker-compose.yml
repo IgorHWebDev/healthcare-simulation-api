@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+  quantum-agent:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.quantum
+    environment:
+      - QUANTUM_ALGORITHM=Kyber1024
+      - KEY_ROTATION_HOURS=24
+      - LOG_LEVEL=INFO
+    volumes:
+      - ../../config:/app/config
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+      start_period: 5s
+    networks:
+      - iqhis-net
+
+  autogen-coordinator:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.autogen
+    environment:
+      - MODEL_CONFIG_PATH=/app/config/autogen.yaml
+      - LOG_LEVEL=INFO
+    volumes:
+      - ../../config:/app/config
+    depends_on:
+      - quantum-agent
+      - ollama
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+      start_period: 5s
+    networks:
+      - iqhis-net
+
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ../../models:/root/.ollama
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/health"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+      start_period: 5s
+    networks:
+      - iqhis-net
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ../../monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - "9090:9090"
+    networks:
+      - iqhis-net
+
+  grafana:
+    image: grafana/grafana:latest
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - iqhis-net
+
+volumes:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  iqhis-net:
+    driver: bridge 

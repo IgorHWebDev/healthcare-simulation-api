@@ -1,0 +1,363 @@
+openapi: 3.1.0
+info:
+  title: Healthcare Simulation API
+  description: |
+    Healthcare Simulation API powered by Ollama multi-model support
+    Version: Sprint 0 - Development
+
+    Key Features:
+    - Advanced healthcare scenario simulation
+    - Multi-model support via Ollama
+    - Real-time feedback and validation
+    - Support for Hebrew language scenarios
+
+  version: 0.1.0
+  contact:
+    name: Development Team
+    email: dev@iqhis.local
+
+servers:
+  - url: https://iqhis-quantum-api.dev
+    description: Development API Endpoint
+
+security:
+  - apiKeyAuth: []
+
+paths:
+  /v1/healthcare/simulate:
+    post:
+      summary: Run healthcare simulation scenario
+      description: Process healthcare simulation scenarios using Ollama models
+      operationId: simulateScenario
+      tags:
+        - Healthcare Simulation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimulationRequest'
+            examples:
+              respiratory_distress:
+                summary: Example respiratory distress scenario
+                value:
+                  title: "👨‍⚕️ פרמדיק מתמודד עם חולה בדירה"
+                  actors: [
+                    "👨‍⚕️ פרמדיק (Paramedic)",
+                    "🤒 חולה (Patient)",
+                    "👨‍👩‍👦 בן משפחה (Family Member)",
+                    "📱 מוקד חירום (Emergency Dispatch)"
+                  ]
+                  steps: [
+                    {
+                      step: 1,
+                      description: "🚨 הגעה למקום האירוע",
+                      actions: [
+                        {
+                          action: "📋 איסוף מידע ראשוני",
+                          details: "בדיקת סימנים חיוניים והערכת מצב המטופל",
+                          references: [
+                            "🏥 מדא פרוטוקולים מתקדמים 2023, פרק 1: הערכה ראשונית"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+      responses:
+        '200':
+          description: Simulation step processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimulationResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /v1/healthcare/validate:
+    post:
+      summary: Validate healthcare protocol
+      description: Validate medical decisions against standard protocols
+      operationId: validateProtocol
+      tags:
+        - Healthcare Simulation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidationRequest'
+      responses:
+        '200':
+          description: Protocol validation results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResponse'
+
+components:
+  schemas:
+    SimulationRequest:
+      type: object
+      required:
+        - title
+        - actors
+        - steps
+      properties:
+        title:
+          type: string
+          description: Title of the simulation scenario in Hebrew with emoji support
+          example: "👨‍⚕️ פרמדיק מתמודד עם חולה בדירה"
+        actors:
+          type: array
+          description: List of actors involved in the scenario with emojis
+          items:
+            type: string
+          example: [
+            "👨‍⚕️ פרמדיק (Paramedic)",
+            "🤒 חולה (Patient)",
+            "👨‍👩‍👦 בן משפחה (Family Member)",
+            "📱 מוקד חירום (Emergency Dispatch)"
+          ]
+        steps:
+          type: array
+          items:
+            type: object
+            required:
+              - step
+              - description
+              - actions
+            properties:
+              step:
+                type: integer
+                description: Step number in the scenario
+              description:
+                type: string
+                description: Hebrew description with emoji
+              actions:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - action
+                    - details
+                  properties:
+                    action:
+                      type: string
+                      description: Action title in Hebrew with emoji
+                    details:
+                      type: string
+                      description: Detailed description in Hebrew
+                    references:
+                      type: array
+                      items:
+                        type: string
+                      description: Protocol references (Hebrew and English)
+                    vital_signs:
+                      type: object
+                      description: Vital signs monitoring with Hebrew labels
+                      properties:
+                        pre_assessment:
+                          type: object
+                          properties:
+                            "❤️ דופק":
+                              type: string
+                            "🫁 נשימות":
+                              type: string
+                            "🌡️ חום":
+                              type: string
+                            "⚡ לחץ דם":
+                              type: string
+                        during_treatment:
+                          type: object
+                          properties:
+                            "❤️ דופק":
+                              type: string
+                            "🫁 נשימות":
+                              type: string
+                            "🌡️ חום":
+                              type: string
+                            "⚡ לחץ דם":
+                              type: string
+
+    SimulationResponse:
+      type: object
+      required:
+        - scenario_id
+        - current_state
+        - next_steps
+        - feedback
+      properties:
+        scenario_id:
+          type: string
+          description: Unique identifier for the simulation session
+        current_state:
+          type: object
+          description: Current simulation state in Hebrew
+          properties:
+            patient_status:
+              type: string
+              enum: ["יציב", "לא יציב", "קריטי"]
+              description: Patient status in Hebrew
+            vital_signs:
+              type: object
+              properties:
+                "❤️ דופק":
+                  type: string
+                "🫁 נשימות":
+                  type: string
+                "🌡️ חום":
+                  type: string
+                "⚡ לחץ דם":
+                  type: string
+            current_interventions:
+              type: array
+              items:
+                type: string
+              description: List of current interventions in Hebrew
+        next_steps:
+          type: array
+          description: Available next steps in Hebrew
+          items:
+            type: object
+            properties:
+              action:
+                type: string
+                description: Action description in Hebrew with emoji
+              protocol_reference:
+                type: string
+                description: Protocol reference in Hebrew/English
+              expected_outcome:
+                type: string
+                description: Expected outcome in Hebrew
+        feedback:
+          type: object
+          description: Feedback on actions in Hebrew
+          properties:
+            correct_actions:
+              type: array
+              items:
+                type: string
+              description: List of correct actions in Hebrew
+            suggestions:
+              type: array
+              items:
+                type: string
+              description: Improvement suggestions in Hebrew
+            protocol_adherence:
+              type: number
+              format: float
+              minimum: 0
+              maximum: 100
+              description: Protocol adherence score
+
+    ValidationRequest:
+      type: object
+      required:
+        - protocol_type
+        - actions
+      properties:
+        protocol_type:
+          type: string
+          description: Type of medical protocol being validated
+          enum:
+            - ACLS
+            - BLS
+            - PALS
+            - TRAUMA
+        actions:
+          type: array
+          items:
+            type: string
+          description: List of actions taken in sequence
+        patient_context:
+          type: object
+          description: Patient context for protocol validation
+          properties:
+            age:
+              type: integer
+            presenting_condition:
+              type: string
+            contraindications:
+              type: array
+              items:
+                type: string
+
+    ValidationResponse:
+      type: object
+      required:
+        - is_valid
+        - score
+      properties:
+        is_valid:
+          type: boolean
+          description: Whether the actions follow protocol
+        score:
+          type: number
+          format: float
+          description: Protocol adherence score (0-100)
+        feedback:
+          type: array
+          items:
+            type: object
+            properties:
+              step:
+                type: integer
+              action:
+                type: string
+              is_correct:
+                type: boolean
+              correction:
+                type: string
+        references:
+          type: array
+          items:
+            type: object
+            properties:
+              protocol:
+                type: string
+              section:
+                type: string
+              details:
+                type: string
+
+  responses:
+    UnauthorizedError:
+      description: Authentication information is missing or invalid
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+                example: "AUTH_001"
+              message:
+                type: string
+                example: "Invalid API key"
+
+    ServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+                example: "SRV_001"
+              message:
+                type: string
+                example: "Internal server error"
+
+  securitySchemes:
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key?
+      description: API Key authentication for secure access
+
+tags:
+  - name: Healthcare Simulation
+    description: Healthcare simulation and training scenarios using Ollama multi-model support 
