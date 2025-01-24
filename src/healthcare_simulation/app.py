@@ -2,6 +2,7 @@
 
 from fastapi import FastAPI, HTTPException, Security, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security.api_key import APIKeyHeader, APIKey
 from typing import Optional, List, Dict, Union, Any
 import logging
 import os
@@ -9,7 +10,6 @@ import uuid
 from pydantic import BaseModel, Field
 from enum import Enum
 from fastapi.responses import JSONResponse
-from fastapi.security.api_key import APIKeyHeader
 from .models import (
     PatientStatus, ProtocolType, VitalSigns, Action, Step,
     SimulationRequest, NextStep, SimulationFeedback, CurrentState,
