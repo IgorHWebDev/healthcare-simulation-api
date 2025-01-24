@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, Security, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security.api_key import APIKeyHeader, APIKey
 from typing import Optional, List, Dict, Union
 import logging
 import uvicorn
