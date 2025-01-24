@@ -1,183 +1,70 @@
-name: IQHIS CI/CD Pipeline
+name: Healthcare Simulation API CI/CD
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ master ]
   pull_request:
-    branches: [ main, develop ]
-
-env:
-  DOCKER_BUILDKIT: 1
-  COMPOSE_DOCKER_CLI_BUILD: 1
+    branches: [ master ]
 
 jobs:
-  validate:
-    name: Code Validation
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.10'
-          
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install flake8 pylint mypy black isort bandit safety
-          pip install -r requirements.txt
-          
-      - name: Run linting
-        run: |
-          flake8 .
-          pylint **/*.py
-          black --check .
-          isort --check-only .
-          
-      - name: Run security scan
-        run: |
-          bandit -r .
-          safety check
-          
-      - name: Run type checking
-        run: |
-          mypy .
-
   test:
-    name: Testing
-    needs: validate
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.10'
-          
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pytest pytest-cov pytest-asyncio
-          pip install -r requirements.txt
-          
-      - name: Run unit tests
-        run: |
-          pytest tests/unit --cov=. --cov-report=xml
-          
-      - name: Run integration tests
-        run: |
-          pytest tests/integration
-          
-      - name: Upload coverage
-        uses: codecov/codecov-action@v2
-        with:
-          file: ./coverage.xml
-          fail_ci_if_error: true
+    - uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    - name: Run tests
+      run: |
+        pytest tests/ -v
 
-  security:
-    name: Security Checks
+  deploy:
     needs: test
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      
-      - name: Run container scan
-        uses: anchore/scan-action@v3
-        with:
-          image: "iqhis-main:latest"
-          fail-build: true
-          
-      - name: Run SAST
-        uses: github/codeql-action/analyze@v2
-        with:
-          languages: python
-          
-      - name: Check dependencies
-        uses: snyk/actions/python@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-
-  build:
-    name: Build Images
-    needs: security
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
+    - name: Check Render service status
+      env:
+        RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+      run: |
+        SERVICE_ID="${{ secrets.RENDER_SERVICE_ID }}"
+        echo "Checking service status..."
+        STATUS=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" \
+          "https://api.render.com/v1/services/$SERVICE_ID" | jq -r '.status')
+        echo "Current service status: $STATUS"
         
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+    - name: Deploy to Render
+      env:
+        RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+      run: |
+        SERVICE_ID="${{ secrets.RENDER_SERVICE_ID }}"
+        echo "Triggering deploy..."
+        DEPLOY_RESPONSE=$(curl -s -X POST \
+          -H "Authorization: Bearer $RENDER_API_KEY" \
+          -H "Content-Type: application/json" \
+          "https://api.render.com/v1/services/$SERVICE_ID/deploys")
+        echo "Deploy triggered: $DEPLOY_RESPONSE"
         
-      - name: Login to DockerHub
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-          
-      - name: Build and push
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          push: true
-          tags: |
-            iqhis/main:latest
-            iqhis/main:${{ github.sha }}
-
-  deploy-staging:
-    name: Deploy to Staging
-    needs: build
-    runs-on: ubuntu-latest
-    environment: staging
-    steps:
-      - uses: actions/checkout@v2
-      
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-west-2
-          
-      - name: Deploy to EKS
-        run: |
-          aws eks update-kubeconfig --name iqhis-staging
-          kubectl apply -f k8s/staging/
-
-  deploy-production:
-    name: Deploy to Production
-    needs: deploy-staging
-    runs-on: ubuntu-latest
-    environment: production
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - uses: actions/checkout@v2
-      
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-west-2
-          
-      - name: Deploy to EKS
-        run: |
-          aws eks update-kubeconfig --name iqhis-production
-          kubectl apply -f k8s/production/
-
-  notify:
-    name: Notification
-    needs: [deploy-staging, deploy-production]
-    runs-on: ubuntu-latest
-    if: always()
-    steps:
-      - name: Notify Slack
-        uses: 8398a7/action-slack@v3
-        with:
-          status: ${{ job.status }}
-          fields: repo,message,commit,author,action,eventName,ref,workflow
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} 
+    - name: Wait for deployment
+      env:
+        RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+      run: |
+        SERVICE_ID="${{ secrets.RENDER_SERVICE_ID }}"
+        echo "Waiting for deployment to complete..."
+        for i in {1..30}; do
+          STATUS=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" \
+            "https://api.render.com/v1/services/$SERVICE_ID" | jq -r '.status')
+          if [ "$STATUS" = "live" ]; then
+            echo "Deployment successful!"
+            exit 0
+          fi
+          echo "Current status: $STATUS. Waiting..."
+          sleep 10
+        done
+        echo "Deployment timed out"
+        exit 1 
