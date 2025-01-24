@@ -11,16 +11,8 @@ services:
         value: 8000
     healthCheckPath: /health
     autoDeploy: true
-    branch: master
-    repo: https://github.com/IgorHWebDev/healthcare-simulation-api.git
-    region: frankfurt
-    buildFilter:
-      paths:
-        - src/**
-        - requirements.txt
-        - render.yaml
     domains:
-      - healthcare-sim.onrender.com
+      - healthcare-simulation-api.onrender.com
     routes:
       - type: rewrite
         source: /*
