@@ -29,7 +29,7 @@ from core.security import validate_token, validate_api_key
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("iqhis")
+logger = logging.getLogger("healthcare-simulation")
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -52,7 +52,7 @@ metrics_service = MetricsService()
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -186,7 +186,7 @@ async def health_check():
 
 @app.post("/simulate", response_model=SimulationResponse)
 async def simulate_scenario(request: SimulationRequest):
-    # Simple simulation logic (to be enhanced)
+    # Simple simulation logic
     scenario_id = str(uuid.uuid4())
     
     if "cardiac arrest" in request.message.lower():
@@ -208,7 +208,7 @@ async def simulate_scenario(request: SimulationRequest):
 
 @app.post("/validate", response_model=ValidationResponse)
 async def validate_action(request: ValidationRequest):
-    # Simple validation logic (to be enhanced)
+    # Simple validation logic
     if "chest compression" in request.action.lower():
         return ValidationResponse(
             is_valid=True,
@@ -223,9 +223,10 @@ async def validate_action(request: ValidationRequest):
     )
 
 if __name__ == "__main__":
+    port = int(os.getenv("PORT", 8000))
     uvicorn.run(
-        "main:app",
-        host=settings.HOST,
-        port=settings.PORT,
-        reload=settings.DEBUG
+        app,
+        host="0.0.0.0",
+        port=port,
+        log_level="info"
     ) 

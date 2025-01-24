@@ -3,14 +3,12 @@ services:
     name: healthcare-simulation-api
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: PYTHONPATH=$PYTHONPATH:/opt/render/project/src python -m src.main
+    startCommand: python src/main.py
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.0
       - key: PORT
         value: 8000
-      - key: ENVIRONMENT
-        value: production
     healthCheckPath: /health
     autoDeploy: true
     branch: master
