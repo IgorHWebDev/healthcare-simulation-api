@@ -1,5 +1,5 @@
-from typing import List, Optional, Dict
 from pydantic import BaseModel, Field
+from typing import List, Dict, Optional, Union
 from enum import Enum
 
 class PatientStatus(str, Enum):
@@ -14,20 +14,19 @@ class ProtocolType(str, Enum):
     TRAUMA = "TRAUMA"
 
 class VitalSigns(BaseModel):
-    pulse: Optional[str] = Field(None, alias="❤️ דופק")
-    breathing: Optional[str] = Field(None, alias="🫁 נשימות")
-    temperature: Optional[str] = Field(None, alias="🌡️ חום")
-    blood_pressure: Optional[str] = Field(None, alias="⚡ לחץ דם")
+    heart_rate: str = Field(..., alias="❤️ דופק", pattern="^[0-9]{1,3}$|^Absent$|^Irregular$")
+    respiratory_rate: str = Field(..., alias="🫁 נשימות", pattern="^[0-9]{1,2}$|^Absent$|^Labored$")
+    temperature: str = Field(..., alias="🌡️ חום", pattern="^[3-4][0-9]\\.[0-9]$|^Normal$")
+    blood_pressure: str = Field(..., alias="⚡ לחץ דם", pattern="^[0-9]{2,3}\\/[0-9]{2,3}$|^Undetectable$")
 
-class VitalSignsMonitoring(BaseModel):
-    pre_assessment: Optional[VitalSigns] = None
-    during_treatment: Optional[VitalSigns] = None
+    class Config:
+        populate_by_name = True
+        allow_population_by_field_name = True
 
 class Action(BaseModel):
     action: str
     details: str
     references: Optional[List[str]] = None
-    vital_signs: Optional[VitalSignsMonitoring] = None
 
 class Step(BaseModel):
     step: int
@@ -51,7 +50,7 @@ class SimulationFeedback(BaseModel):
 
 class CurrentState(BaseModel):
     patient_status: PatientStatus
-    vital_signs: Optional[VitalSigns] = None
+    vital_signs: VitalSigns
     current_interventions: List[str]
 
 class SimulationResponse(BaseModel):
@@ -60,17 +59,12 @@ class SimulationResponse(BaseModel):
     next_steps: List[NextStep]
     feedback: SimulationFeedback
 
-class PatientContext(BaseModel):
-    age: Optional[int] = None
-    presenting_condition: Optional[str] = None
-    contraindications: Optional[List[str]] = None
-
 class ValidationRequest(BaseModel):
     protocol_type: ProtocolType
     actions: List[str]
-    patient_context: Optional[PatientContext] = None
+    patient_context: Optional[Dict[str, Union[int, str, List[str]]]] = None
 
-class ValidationFeedback(BaseModel):
+class ValidationFeedbackStep(BaseModel):
     step: int
     action: str
     is_correct: bool
@@ -84,5 +78,16 @@ class ProtocolReference(BaseModel):
 class ValidationResponse(BaseModel):
     is_valid: bool
     score: float = Field(ge=0, le=100)
-    feedback: Optional[List[ValidationFeedback]] = None
-    references: Optional[List[ProtocolReference]] = None 
+    feedback: Optional[List[ValidationFeedbackStep]] = None
+    references: Optional[List[ProtocolReference]] = None
+
+current_state = CurrentState(
+    patient_status=PatientStatus.UNSTABLE,
+    vital_signs=VitalSigns(**{
+        "❤️ דופק": "72",
+        "🫁 נשימות": "16",
+        "🌡️ חום": "36.5",
+        "⚡ לחץ דם": "120/80"
+    }),
+    current_interventions=[]
+) 

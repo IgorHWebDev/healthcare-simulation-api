@@ -1,0 +1,135 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Emergency Response API",
+    "description": "Primary healthcare simulation API for immediate emergency response",
+    "version": "v1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://healthcare-simulation-api.onrender.com",
+      "description": "Production Server"
+    }
+  ],
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "paths": {
+    "/simulate": {
+      "post": {
+        "summary": "Emergency Response Simulation",
+        "description": "Process initial emergency medical scenario",
+        "operationId": "simulateEmergency",
+        "tags": ["Emergency"],
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmergencyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful emergency response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmergencyResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "API key for authentication"
+      }
+    },
+    "schemas": {
+      "EmergencyRequest": {
+        "type": "object",
+        "required": ["scenario"],
+        "properties": {
+          "scenario": {
+            "type": "string",
+            "description": "Description of the emergency medical scenario",
+            "example": "45-year-old male with chest pain radiating to left arm, shortness of breath"
+          }
+        }
+      },
+      "EmergencyResponse": {
+        "type": "object",
+        "required": ["response", "vital_signs"],
+        "properties": {
+          "response": {
+            "type": "string",
+            "description": "Initial emergency response and treatment plan"
+          },
+          "vital_signs": {
+            "type": "object",
+            "properties": {
+              "heart_rate": {
+                "type": "string",
+                "example": "❤️ 72"
+              },
+              "blood_pressure": {
+                "type": "string",
+                "example": "⚡ 120/80"
+              },
+              "temperature": {
+                "type": "string",
+                "example": "🌡️ 36.5"
+              },
+              "respiratory_rate": {
+                "type": "string",
+                "example": "🫁 16"
+              }
+            }
+          },
+          "scenario_id": {
+            "type": "string",
+            "description": "Unique identifier for the scenario",
+            "example": "sim_123456"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": ["error"],
+        "properties": {
+          "error": {
+            "type": "string",
+            "example": "Invalid API key"
+          }
+        }
+      }
+    }
+  }
+} 

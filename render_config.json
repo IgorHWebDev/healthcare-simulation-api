@@ -1,0 +1,28 @@
+{
+    "name": "healthcare-simulation-api",
+    "type": "web",
+    "env": "python",
+    "region": "oregon",
+    "buildCommand": "pip install -r requirements.txt",
+    "startCommand": "uvicorn src.healthcare_simulation:app --host 0.0.0.0 --port $PORT",
+    "envVars": [
+        {
+            "key": "PYTHON_VERSION",
+            "value": "3.11.0"
+        },
+        {
+            "key": "LM_STUDIO_URL",
+            "value": "http://localhost:1234/v1"
+        },
+        {
+            "key": "LM_STUDIO_MODEL",
+            "value": "phi_lora_3b_medical_HealthcareMagic_gguf"
+        },
+        {
+            "key": "API_KEY",
+            "value": "hc_sim_test_key_local"
+        }
+    ],
+    "healthCheckPath": "/health",
+    "autoDeploy": true
+} 

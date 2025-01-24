@@ -2,6 +2,25 @@
 
 A comprehensive framework implementing a Hybrid Agile-Waterfall methodology specifically designed for healthcare software development, ensuring regulatory compliance while maintaining agile flexibility.
 
+## Current System Status
+
+### Working Features
+- ✅ Healthcare Simulation API with RapidAPI Integration
+- ✅ Quantum-Safe Security Implementation
+- ✅ Environment Configuration & Security
+- ✅ OpenAPI Documentation
+- ✅ Hybrid Agile-Waterfall Process Implementation
+
+### Implemented Endpoints
+- `/simulate` - Medical scenario simulation
+- `/validate` - Protocol validation
+
+### Security Features
+- RapidAPI Key Authentication
+- Environment-based Configuration
+- Secure API Key Storage
+- CORS and Security Headers
+
 ## Framework Overview
 
 This framework combines the rigorous documentation and validation requirements of traditional Waterfall methodologies with the flexibility and iterative nature of Agile development, specifically tailored for healthcare software projects.
@@ -33,10 +52,19 @@ hc_framework/
 
 ## Getting Started
 
-1. Review the documentation in `docs/` for framework overview
-2. Set up your project using the templates in `docs/templates/`
-3. Configure CI/CD pipelines using the tools in `tools/ci_cd/`
-4. Follow the process guides in `process/` for development workflow
+1. Clone the repository
+2. Copy `.env.example` to `.env` and configure environment variables
+3. Install dependencies: `pip install -r requirements.txt`
+4. Run the development server: `python app.py`
+
+### API Configuration
+
+1. Get your RapidAPI key from the RapidAPI dashboard
+2. Add the key to your `.env` file:
+   ```
+   RAPIDAPI_KEY=your_api_key_here
+   ```
+3. Configure additional environment variables as needed
 
 ## Documentation Index
 
@@ -46,22 +74,24 @@ hc_framework/
 - [Waterfall Phase Guide](process/waterfall/README.md)
 - [Validation Framework](tools/validation/README.md)
 
+## Development Workflow
+
+### Waterfall Phases
+1. Planning & Requirements
+2. Architecture & Design
+3. Verification & Validation
+4. Deployment & Release
+
+### Agile Sprints
+- 2-week sprint cycles
+- Daily standups
+- Sprint planning and retrospectives
+- Continuous integration and deployment
+
 ## Contributing
 
 Please refer to our [Contributing Guidelines](CONTRIBUTING.md) for information on how to contribute to this framework.
 
 ## License
 
-This framework is licensed under [appropriate license] - see the [LICENSE](LICENSE.md) file for details.
-
-## Render API Key Setup
-
-1. Navigate to [Render Dashboard API Keys](https://dashboard.render.com/u/settings#api-keys)
-2. Generate a new API key if you haven't already
-3. Copy the API key and add it to your `.env` file:
-   ```
-   RENDER_API_KEY=your_render_api_key_here
-   ```
-4. Make sure your `.env` file is listed in `.gitignore` to keep the key secure
-
-**Note**: Never share or commit your Render API key. The key should only be stored in your local `.env` file or in secure environment variables in your deployment environment. 
+This framework is licensed under [appropriate license] - see the [LICENSE](LICENSE.md) file for details. 

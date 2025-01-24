@@ -2,13 +2,18 @@ services:
   - type: web
     name: healthcare-simulation-api
     env: python
+    plan: starter
     buildCommand: pip install -r requirements.txt
-    startCommand: python src/main.py
+    startCommand: uvicorn src.healthcare_simulation:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
-        value: 3.9.0
-      - key: PORT
-        value: 8000
+        value: 3.11.0
+      - key: LM_STUDIO_URL
+        value: http://localhost:1234/v1
+      - key: LM_STUDIO_MODEL
+        value: phi_lora_3b_medical_HealthcareMagic_gguf
+      - key: API_KEY
+        sync: false
     healthCheckPath: /health
     autoDeploy: true
     domains:

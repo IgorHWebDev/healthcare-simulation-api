@@ -1,0 +1,148 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Healthcare Simulation API",
+    "description": "Emergency response simulation API for immediate first aid and paramedic treatments",
+    "version": "v1.0.0",
+    "contact": {
+      "name": "Healthcare Simulation Team",
+      "email": "support@healthcare-sim.dev"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://healthcare-simulation-api.onrender.com",
+      "description": "Production Render API Server"
+    }
+  ],
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "paths": {
+    "/simulate": {
+      "post": {
+        "summary": "Emergency Response Simulation",
+        "description": "Process an emergency medical scenario and provide immediate response recommendations",
+        "operationId": "simulateEmergency",
+        "tags": ["Simulation"],
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful emergency response simulation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "API key for authentication"
+      }
+    },
+    "schemas": {
+      "SimulationRequest": {
+        "type": "object",
+        "required": ["message"],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Emergency scenario description",
+            "example": "A 50-year-old man collapsed suddenly at a family gathering. He is unresponsive and not breathing."
+          }
+        }
+      },
+      "SimulationResponse": {
+        "type": "object",
+        "required": ["response"],
+        "properties": {
+          "response": {
+            "type": "string",
+            "description": "Emergency response and treatment recommendations"
+          },
+          "vital_signs": {
+            "type": "object",
+            "properties": {
+              "heart_rate": {
+                "type": "string",
+                "description": "Heart rate with emoji",
+                "example": "❤️ 72"
+              },
+              "blood_pressure": {
+                "type": "string",
+                "description": "Blood pressure with emoji",
+                "example": "⚡ 120/80"
+              },
+              "temperature": {
+                "type": "string",
+                "description": "Temperature with emoji",
+                "example": "🌡️ 36.5"
+              },
+              "respiratory_rate": {
+                "type": "string",
+                "description": "Respiratory rate with emoji",
+                "example": "🫁 16"
+              }
+            }
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": ["error"],
+        "properties": {
+          "error": {
+            "type": "string",
+            "example": "Internal server error occurred"
+          }
+        }
+      }
+    }
+  }
+} 

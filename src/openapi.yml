@@ -123,6 +123,111 @@ components:
       in: header
       name: X-RapidAPI-Key
       description: RapidAPI subscription key
+  
+  schemas:
+    SimulationRequest:
+      type: object
+      required: ["message"]
+      properties:
+        message:
+          type: string
+          description: Scenario description or next action
+          example: "Start cardiac arrest simulation"
+        language:
+          type: string
+          enum: ["en", "he"]
+          default: "en"
+          description: Preferred language for the simulation
+
+    SimulationResponse:
+      type: object
+      required: ["scenario_id", "response", "next_steps"]
+      properties:
+        scenario_id:
+          type: string
+          description: Unique identifier for the simulation session
+        response:
+          type: string
+          description: AI-generated response with next steps
+        next_steps:
+          type: array
+          items:
+            type: string
+          description: List of recommended next actions
+        vital_signs:
+          type: object
+          properties:
+            heart_rate:
+              type: string
+              description: Heart rate with emoji
+              example: "❤️ 72"
+            respiratory_rate:
+              type: string
+              description: Respiratory rate with emoji
+              example: "🫁 16"
+            temperature:
+              type: string
+              description: Temperature with emoji
+              example: "🌡️ 36.5"
+            blood_pressure:
+              type: string
+              description: Blood pressure with emoji
+              example: "⚡ 120/80"
+
+    ValidationRequest:
+      type: object
+      required: ["action", "protocol"]
+      properties:
+        action:
+          type: string
+          description: Medical action to validate
+          example: "Start chest compressions"
+        protocol:
+          type: string
+          enum: ["ACLS", "BLS", "PALS", "TRAUMA"]
+          description: Medical protocol to validate against
+
+    ValidationResponse:
+      type: object
+      required: ["is_valid", "feedback", "score"]
+      properties:
+        is_valid:
+          type: boolean
+          description: Whether the action is valid
+        feedback:
+          type: string
+          description: Detailed feedback about the action
+        score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Protocol adherence score (0-100)
+        references:
+          type: array
+          items:
+            type: object
+            properties:
+              protocol:
+                type: string
+              section:
+                type: string
+              details:
+                type: string
+
+    Error:
+      type: object
+      required: ["error"]
+      properties:
+        error:
+          type: string
+          description: Error message
+        code:
+          type: string
+          description: Error code
+        details:
+          type: object
+          description: Additional error details
 
 security:
   - RapidAPIKey: []
