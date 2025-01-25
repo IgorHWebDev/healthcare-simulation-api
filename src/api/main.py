@@ -3,13 +3,16 @@ Main FastAPI application for healthcare simulation API.
 Includes Render-optimized endpoints for healthcare operations.
 """
 from fastapi import FastAPI, HTTPException, Depends, Security, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials, APIKeyHeader
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 import os
+import logging
+from sqlalchemy import create_engine
+from sqlalchemy.exc import SQLAlchemyError
 
 from src.database.mimic4_adapter import MIMIC4Adapter
 from src.utils.m3_optimization import M3Optimizer
@@ -18,15 +21,19 @@ from src.api.healthcare.models import (
     ClinicalPrediction,
     AnalysisRequest,
     HealthcareResponse,
-    LabResult
+    LabResult,
+    Base
 )
-from src.api.security.auth import verify_token, get_current_user, User
+from src.api.security.auth import User, create_access_token, get_current_user
 from src.api.render_endpoints import router as render_router
-from sqlalchemy import create_engine
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Get database configuration from environment
 DB_USER = os.getenv("DB_USER", "healthcare")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_PASSWORD = os.getenv("DB_SECRET")
 DB_NAME = os.getenv("DB_NAME", "healthcare_db")
 DB_HOST = os.getenv("DB_HOST", "postgres")
 DB_PORT = os.getenv("DB_PORT", "5432")
@@ -34,8 +41,8 @@ DB_PORT = os.getenv("DB_PORT", "5432")
 # Initialize FastAPI app
 app = FastAPI(
     title="Healthcare Simulation API",
-    description="API for healthcare data simulation and analysis with Render deployment support",
-    version="1.0.0"
+    description="M3-optimized healthcare API with Render deployment support",
+    version="2025.1.0"
 )
 
 # Add CORS middleware
@@ -47,9 +54,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize database
+# Initialize database URL
 DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-engine = create_engine(DATABASE_URL)
+
+# Security
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=True)
+security = HTTPBearer()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -57,40 +67,65 @@ async def lifespan(app: FastAPI):
     Lifecycle management for the FastAPI application.
     Handles database initialization and M3 optimizer setup.
     """
-    # Initialize database tables
-    # Base.metadata.create_all(bind=engine)
-    
-    # Initialize M3 optimizer
-    M3Optimizer.initialize(metal_enabled=True)
-    
-    yield
-    
-    # Cleanup
-    M3Optimizer.cleanup()
-
-# Security
-security = HTTPBearer()
-
-# Initialize components
-db = MIMIC4Adapter()
-m3_optimizer = M3Optimizer()
-
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Security(security)):
-    """Verify JWT token and return user info."""
-    if not credentials:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated"
-        )
-    
-    token = credentials.credentials
     try:
-        user = verify_token(token)
-        return user
+        # Initialize database
+        engine = create_engine(DATABASE_URL)
+        Base.metadata.create_all(bind=engine)
+        logger.info("Database initialized successfully")
+
+        # Initialize M3 optimizer with Metal framework
+        metal_enabled = os.getenv("METAL_FRAMEWORK_ENABLED", "true").lower() == "true"
+        batch_size = int(os.getenv("BATCH_SIZE", "256"))
+        max_circuits = int(os.getenv("MAX_PARALLEL_CIRCUITS", "1000"))
+
+        M3Optimizer.initialize(
+            metal_enabled=metal_enabled,
+            batch_size=batch_size,
+            max_parallel_circuits=max_circuits
+        )
+        logger.info("M3 Optimizer initialized with Metal framework")
+
+        # Initialize database adapter
+        app.state.db = MIMIC4Adapter(engine)
+        app.state.m3_optimizer = M3Optimizer()
+        
+        yield
+        
+        # Cleanup
+        M3Optimizer.cleanup()
+        logger.info("Resources cleaned up successfully")
+        
+    except SQLAlchemyError as e:
+        logger.error(f"Database initialization failed: {str(e)}")
+        raise
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e)
+        logger.error(f"Application startup failed: {str(e)}")
+        raise
+
+app.lifespan = lifespan
+
+@app.middleware("http")
+async def verify_api_key(request, call_next):
+    """Verify API key middleware."""
+    try:
+        if "X-API-Key" not in request.headers:
+            return JSONResponse(
+                status_code=status.HTTP_403_FORBIDDEN,
+                content={"detail": "API key is missing"}
+            )
+        api_key = request.headers["X-API-Key"]
+        if api_key != os.getenv("API_KEY"):
+            return JSONResponse(
+                status_code=status.HTTP_403_FORBIDDEN,
+                content={"detail": "Invalid API key"}
+            )
+        response = await call_next(request)
+        return response
+    except Exception as e:
+        logger.error(f"API key verification failed: {str(e)}")
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"detail": "Internal server error during authentication"}
         )
 
 @app.exception_handler(HTTPException)
@@ -117,18 +152,18 @@ async def health_check() -> Dict[str, Any]:
     """Health check endpoint."""
     try:
         # Check database connection
-        with engine.connect() as conn:
+        with app.state.db.engine.connect() as conn:
             conn.execute("SELECT 1")
         
         # Check M3 optimizer
-        m3_optimizer.check_status()
+        app.state.m3_optimizer.check_status()
         
         return {
             "status": "healthy",
             "database_connection": "active",
             "m3_optimizer": "ready",
             "metal_framework": "enabled",
-            "api_version": "1.0.0",
+            "api_version": "2025.1.0",
             "last_check_time": datetime.now().isoformat()
         }
     except Exception as e:
@@ -147,7 +182,7 @@ async def get_system_status(
     """
     try:
         # Get M3 optimizer metrics
-        optimizer_metrics = m3_optimizer.get_metrics()
+        optimizer_metrics = app.state.m3_optimizer.get_metrics()
         
         return HealthcareResponse(
             status="success",
@@ -160,7 +195,7 @@ async def get_system_status(
                     "performance_metrics": optimizer_metrics.get("performance", {})
                 },
                 "api_status": {
-                    "version": "1.0.0",
+                    "version": "2025.1.0",
                     "uptime": optimizer_metrics.get("uptime", 0),
                     "request_count": optimizer_metrics.get("request_count", 0)
                 }
@@ -179,8 +214,8 @@ async def get_patient_data(
 ) -> HealthcareResponse:
     """Get patient data by ID."""
     try:
-        with m3_optimizer.optimize_query_execution() as optimization:
-            data = db.query_patient_data(patient_id)
+        with app.state.m3_optimizer.optimize_query_execution() as optimization:
+            data = app.state.db.query_patient_data(patient_id)
             if not data:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
@@ -213,9 +248,9 @@ async def predict_clinical_outcome(
 ) -> HealthcareResponse:
     """Generate clinical predictions."""
     try:
-        with m3_optimizer.optimize_prediction() as optimization:
+        with app.state.m3_optimizer.optimize_prediction() as optimization:
             # Get patient data
-            patient_data = db.query_patient_data(request.patient_id)
+            patient_data = app.state.db.query_patient_data(request.patient_id)
             if not patient_data:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
@@ -243,7 +278,7 @@ async def analyze_data(
 ) -> HealthcareResponse:
     """Analyze healthcare data."""
     try:
-        with m3_optimizer.optimize_analysis() as optimization:
+        with app.state.m3_optimizer.optimize_analysis() as optimization:
             if not request.patient_ids:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -271,7 +306,7 @@ async def process_batch_data(
 ) -> HealthcareResponse:
     """Process batch data requests."""
     try:
-        with m3_optimizer.optimize_processing() as optimization:
+        with app.state.m3_optimizer.optimize_processing() as optimization:
             if not request.get("patient_ids"):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -283,7 +318,7 @@ async def process_batch_data(
             # Process each patient
             processed_data = []
             for patient_id in request["patient_ids"]:
-                data = db.query_patient_data(patient_id)
+                data = app.state.db.query_patient_data(patient_id)
                 if data:
                     processed_data.append(data)
             
@@ -316,9 +351,9 @@ async def update_patient_data(
 ) -> HealthcareResponse:
     """Update patient data."""
     try:
-        with m3_optimizer.optimize_storage() as optimization:
+        with app.state.m3_optimizer.optimize_storage() as optimization:
             # Update patient data
-            success = db.update_patient_data(request)
+            success = app.state.db.update_patient_data(request)
             if not success:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
