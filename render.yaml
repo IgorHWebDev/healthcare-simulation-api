@@ -1,13 +1,14 @@
 services:
+  # API Service
   - type: web
     name: healthcare-simulation-api
-    env: python
-    plan: standard
+    runtime: python
+    plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn src.api.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.0
+        value: 3.11.5
       - key: PORT
         value: 8000
       - key: API_KEY
@@ -16,40 +17,76 @@ services:
         value: production
       - key: DEBUG
         value: false
-      - key: DATABASE_URL
-        fromDatabase:
-          name: healthcare-db
-          property: connectionString
+      - key: DB_USER
+        value: healthcare
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_NAME
+        value: healthcare_db
+      - key: DB_HOST
+        value: localhost
+      - key: DB_PORT
+        value: 5432
       - key: M3_OPTIMIZER_ENABLED
-        value: true
+        value: "true"
       - key: METAL_FRAMEWORK_ENABLED
-        value: true
-      - key: BATCH_SIZE
-        value: 256
-      - key: MAX_PARALLEL_CIRCUITS
-        value: 1000
-    healthCheckPath: /api/v1/health
+        value: "true"
+    healthCheckPath: /health
     autoDeploy: true
-    domains:
-      - healthcare-simulation-api.onrender.com
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /
 
-  - type: redis
-    name: healthcare-cache
-    ipAllowList: []
-    plan: free
-    maxmemoryPolicy: noeviction
+  # Background Worker for Analysis Tasks
+  - type: worker
+    name: healthcare-worker
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: celery -A src.api.worker.celery worker --loglevel=info
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.5
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: healthcare-redis
+          property: connectionString
 
-  - type: postgresql
+  # Database Service
+  - type: pserv
     name: healthcare-db
+    runtime: docker
+    plan: standard
+    region: oregon
+    disk:
+      name: healthcare-db-data
+      mountPath: /var/lib/postgresql/data
+      sizeGB: 10
+    image:
+      url: docker.io/library/postgres:15-alpine
+    envVars:
+      - key: POSTGRES_USER
+        value: healthcare
+      - key: POSTGRES_PASSWORD
+        generateValue: true
+      - key: POSTGRES_DB
+        value: healthcare_db
+
+  # Redis Service
+  - type: pserv
+    name: healthcare-redis
+    runtime: docker
     plan: free
+    image:
+      url: docker.io/library/redis:7-alpine
+    envVars:
+      - key: MAXMEMORY_POLICY
+        value: noeviction
+
+databases:
+  - name: healthcare-db
+    databaseName: healthcare_db
+    user: healthcare
+    plan: standard
+
+  # Redis database configuration
+  - name: healthcare-redis
+    plan: starter
     ipAllowList: []
-    postgresMajorVersion: 16
-    properties:
-      databaseName: healthcare_db
-      user: healthcare
-      maxConnections: 20
-      sslMode: require

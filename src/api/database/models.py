@@ -27,7 +27,22 @@ class Patient(Base):
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100), nullable=False)
     date_of_birth = Column(Date, nullable=False)
-    gender = Column(String(10))
+    age = Column(Integer, nullable=False)
+    gender = Column(String(10), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class VitalSigns(Base):
+    __tablename__ = 'vital_signs'
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    patient_id = Column(UUID(as_uuid=True), ForeignKey('patients.id'))
+    blood_pressure = Column(String(20), nullable=False)
+    heart_rate = Column(Integer, nullable=False)
+    temperature = Column(Float, nullable=False)
+    respiratory_rate = Column(Integer, nullable=False)
+    oxygen_saturation = Column(Integer, nullable=False)
+    recorded_at = Column(DateTime, default=datetime.utcnow)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -37,8 +52,8 @@ class Diagnosis(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     patient_id = Column(UUID(as_uuid=True), ForeignKey('patients.id'))
     icd_code = Column(String(20), nullable=False)
-    description = Column(String, nullable=False)
-    diagnosed_date = Column(Date, nullable=False)
+    description = Column(String, nullable=True)
+    diagnosed_date = Column(Date, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

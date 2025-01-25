@@ -19,7 +19,7 @@ from src.api.healthcare.models import (
     HealthcareResponse,
     LabResult
 )
-from src.api.security.auth import create_token
+from src.api.security.auth import create_access_token
 
 # Test client setup
 client = TestClient(app)
@@ -27,7 +27,7 @@ client = TestClient(app)
 @pytest.fixture
 def auth_headers():
     """Get authentication headers for testing."""
-    token = create_token({"sub": "test_user", "role": "admin"})
+    token = create_access_token({"sub": "test_user", "role": "admin"})
     return {"Authorization": f"Bearer {token}"}
 
 @pytest.fixture

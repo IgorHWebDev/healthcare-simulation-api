@@ -72,6 +72,96 @@ POST /v1/quantum/encrypt
 - **Compliance**: HIPAA data protection
 - **Validation**: Encryption strength verification
 
+### Patient Management
+
+#### Create Patient
+```http
+POST /api/v1/healthcare/patients
+```
+
+Creates a new patient record with comprehensive health data.
+
+**Request Body:**
+```json
+{
+  "mrn": "string",
+  "first_name": "string",
+  "last_name": "string",
+  "date_of_birth": "string (YYYY-MM-DD)",
+  "age": "integer",
+  "gender": "string",
+  "vital_signs": {
+    "blood_pressure": "string",
+    "heart_rate": "integer",
+    "temperature": "float",
+    "respiratory_rate": "integer",
+    "oxygen_saturation": "integer"
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "status": "success",
+  "data": {
+    "patient_id": "uuid"
+  }
+}
+```
+
+### Patient Analysis
+
+#### Analyze Patient
+```http
+POST /api/v1/healthcare/analyze/{patient_id}
+```
+
+Performs comprehensive patient analysis using M3-optimized algorithms.
+
+**Request Body:**
+```json
+{
+  "patient_ids": ["uuid"],
+  "analysis_type": "string"
+}
+```
+
+**Response:**
+```json
+{
+  "status": "success",
+  "data": {
+    "analysis": {
+      "summary": {
+        "patient_id": "string",
+        "analysis_type": "string",
+        "timestamp": "string",
+        "confidence_score": "string"
+      },
+      "predictions": {
+        "risk_level": "string",
+        "confidence": "float",
+        "probability": "float"
+      },
+      "risk_factors": [
+        {
+          "factor": "string",
+          "severity": "string"
+        }
+      ],
+      "action_items": [
+        {
+          "action": "string",
+          "priority": "string",
+          "status": "string"
+        }
+      ]
+    }
+  }
+}
+```
+
 ## Data Models
 
 ### Health Response
@@ -150,45 +240,72 @@ POST /v1/quantum/encrypt
    - Secure key storage
    - Audit logging
 
-## Testing Framework
+## M3 Optimization
 
-### Unit Tests
-- Endpoint validation
-- Data model verification
-- Security checks
-- Performance benchmarks
+The API leverages the M3 silicon chip for optimized performance:
 
-### Integration Tests
-- End-to-end workflows
-- Security integration
-- Compliance validation
-- Performance monitoring
+### Hardware Acceleration
+- Utilizes Apple's Metal framework for GPU-accelerated computations
+- Optimizes matrix operations for the M3 architecture
+- Implements efficient memory management for large datasets
 
-### Compliance Tests
-- HIPAA requirements
-- FDA guidelines
-- ISO standards
-- Security protocols
+### Clinical Predictions
+- Risk assessment using M3-optimized machine learning models
+- Real-time analysis of patient vital signs
+- Efficient processing of medical history and lab results
 
-## Monitoring and Metrics
+### Performance Monitoring
+- Continuous monitoring of CPU and GPU usage
+- Automatic resource allocation based on workload
+- Performance metrics tracking and optimization
 
-### Performance Metrics
-- Response times
-- Error rates
-- Resource utilization
-- Encryption performance
+## Error Handling
 
-### Security Metrics
-- Authentication attempts
-- Key rotation status
-- Security incidents
-- Access patterns
+The API uses standard HTTP status codes and provides detailed error messages:
 
-### Compliance Metrics
-- HIPAA compliance
-- FDA requirements
-- Audit trail
-- Data protection
+- 200: Successful operation
+- 201: Resource created successfully
+- 400: Bad request (invalid input)
+- 401: Unauthorized (invalid credentials)
+- 404: Resource not found
+- 422: Unprocessable entity (validation error)
+- 500: Internal server error
+
+## Database Schema
+
+### Clinical Predictions
+```sql
+CREATE TABLE clinical_predictions (
+    id UUID PRIMARY KEY,
+    patient_id UUID REFERENCES patients(id),
+    prediction_type VARCHAR(100) NOT NULL,
+    prediction_value FLOAT NOT NULL,
+    confidence_score FLOAT NOT NULL,
+    factors JSONB,
+    prediction_date TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+## Testing
+
+The API includes comprehensive test suites:
+
+- Unit tests for all endpoints
+- Integration tests for patient workflows
+- Performance tests for M3 optimization
+- Mock data generation for testing
+- Automated test runners with pytest
+
+## Security Considerations
+
+- All PHI (Protected Health Information) is encrypted
+- API keys are securely stored and rotated
+- JWT tokens for session management
+- CORS protection enabled
+- Rate limiting implemented
+- Input validation and sanitization
 
 ## Development Guidelines
 
@@ -243,4 +360,4 @@ POST /v1/quantum/encrypt
 - FDA Requirements
 - ISO 13485:2016
 - IEC 62304
-- NIST Standards 
+- NIST Standards

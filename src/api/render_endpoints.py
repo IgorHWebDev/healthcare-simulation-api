@@ -1,26 +1,36 @@
 """
-Render API endpoints for healthcare operations.
-These endpoints are specifically optimized for Render deployment and M3 integration.
+Healthcare API endpoints optimized for M3 silicon and Metal framework.
 """
 from typing import Dict, Any, Optional, List
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query, Request
 from fastapi.responses import JSONResponse
 from datetime import datetime
 import os
+import logging
+import json
 
-from .healthcare.operations import HealthcareOperations
-from .healthcare.models import (
+from src.api.healthcare.operations import HealthcareOperations
+from src.api.healthcare.models import (
     PatientData,
     ClinicalPrediction,
     AnalysisRequest,
-    HealthcareResponse
+    PatientCreateRequest,
+    SimulationRequest,
+    ValidationRequest
 )
-from .security.auth import get_current_user, User
-from .m3.optimizer import M3Optimizer
+from src.api.security.auth import get_current_user, User
+from src.api.main import verify_api_key
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 # Initialize router
-router = APIRouter(prefix="/api/v1/render")
+router = APIRouter(
+    tags=["healthcare"],
+    responses={404: {"description": "Not found"}},
+    dependencies=[Depends(verify_api_key)]
+)
 
 # Get database configuration from environment
 DB_USER = os.getenv("DB_USER", "healthcare")
@@ -35,190 +45,153 @@ DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NA
 # Initialize healthcare operations
 ops = HealthcareOperations(database_url=DATABASE_URL)
 
-@router.post("/analyze/patient/{patient_id}", response_model=HealthcareResponse)
+# Log router initialization
+logger.info("Initializing healthcare router with endpoints:")
+for route in router.routes:
+    logger.info(f"Route: {route.path} [{route.methods}]")
+
+@router.post("/healthcare/patients", status_code=201)
+async def create_patient(
+    request: Request,
+    patient_request: PatientCreateRequest
+) -> Dict[str, Any]:
+    """Create a new patient record."""
+    try:
+        logger.info(f"Processing create_patient request")
+        logger.debug(f"Request path: {request.url.path}")
+        logger.debug(f"Patient request: {json.dumps(patient_request.dict(), indent=2)}")
+        
+        patient_id = await ops.create_patient(patient_request.patient_data)
+        
+        response_data = {
+            "status": "success",
+            "message": "Patient created successfully",
+            "patient_id": str(patient_id),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        logger.info(f"Successfully created patient with ID: {patient_id}")
+        return response_data
+    except Exception as e:
+        error_msg = f"Error creating patient: {str(e)}"
+        logger.error(error_msg)
+        raise HTTPException(
+            status_code=500,
+            detail=error_msg
+        )
+
+@router.post("/healthcare/analyze/{patient_id}")
 async def analyze_patient_scenario(
+    request: Request,
     patient_id: UUID,
     analysis_request: AnalysisRequest,
-    background_tasks: BackgroundTasks,
-    current_user: User = Depends(get_current_user)
-) -> HealthcareResponse:
+    background_tasks: BackgroundTasks
+) -> Dict[str, Any]:
     """
-    Analyze patient scenario using M3-optimized processing.
+    Process a patient scenario through the healthcare simulation model.
     This endpoint leverages Metal framework acceleration for rapid analysis.
     """
     try:
-        # Process the scenario
-        response = await ops.process_patient_scenario(
-            patient_id=patient_id,
-            analysis_type=analysis_request.analysis_type,
-            parameters=analysis_request.parameters
-        )
+        logger.info(f"Processing analyze_patient request for patient {patient_id}")
+        logger.debug(f"Request path: {request.url.path}")
+        logger.debug(f"Analysis request: {json.dumps(analysis_request.dict(), indent=2)}")
         
-        # Schedule background task for extended analysis
-        background_tasks.add_task(
-            _perform_extended_analysis,
+        analysis_result = await ops.analyze_patient_scenario(
             patient_id,
-            analysis_request
+            analysis_request,
+            background_tasks
         )
         
-        return response
-        
+        response_data = {
+            "status": "success",
+            "message": "Analysis completed successfully",
+            "analysis_id": analysis_result.analysis_id,
+            "predictions": analysis_result.predictions,
+            "recommendations": analysis_result.recommendations,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        logger.info(f"Successfully completed analysis for patient {patient_id}")
+        logger.debug(f"Analysis result: {json.dumps(response_data, indent=2)}")
+        return response_data
     except Exception as e:
+        error_msg = f"Error analyzing patient {patient_id}: {str(e)}"
+        logger.error(error_msg)
         raise HTTPException(
             status_code=500,
-            detail=f"Error analyzing patient scenario: {str(e)}"
+            detail=error_msg
         )
 
-@router.post("/batch/analyze", response_model=List[HealthcareResponse])
-async def batch_analyze_patients(
-    patient_ids: List[UUID],
-    analysis_request: AnalysisRequest,
-    current_user: User = Depends(get_current_user)
-) -> List[HealthcareResponse]:
+@router.post("/healthcare/simulate")
+async def simulate_scenario(
+    request: Request,
+    simulation_request: SimulationRequest,
+    background_tasks: BackgroundTasks
+) -> Dict[str, Any]:
     """
-    Perform batch analysis on multiple patients using M3 optimization.
-    Utilizes parallel processing for improved performance.
+    Simulate patient scenario using M3-optimized processing.
+    This endpoint leverages Metal framework acceleration for rapid simulation.
     """
-    responses = []
-    async with M3Optimizer().optimize_batch_processing() as optimizer:
-        for patient_id in patient_ids:
-            try:
-                response = await ops.process_patient_scenario(
-                    patient_id=patient_id,
-                    analysis_type=analysis_request.analysis_type,
-                    parameters=analysis_request.parameters
-                )
-                responses.append(response)
-            except Exception as e:
-                responses.append(
-                    HealthcareResponse(
-                        status="error",
-                        message=f"Error processing patient {patient_id}: {str(e)}",
-                        data=None
-                    )
-                )
+    logger.info(f"Processing simulate_scenario request")
+    logger.debug(f"Request path: {request.url.path}")
+    logger.debug(f"Simulation request: {json.dumps(simulation_request.dict(), indent=2)}")
     
-    return responses
-
-@router.get("/report/patient/{patient_id}", response_model=HealthcareResponse)
-async def get_patient_report(
-    patient_id: UUID,
-    report_type: str,
-    start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None,
-    current_user: User = Depends(get_current_user)
-) -> HealthcareResponse:
-    """
-    Generate comprehensive patient report with M3-optimized analytics.
-    Supports various report types and date ranges.
-    """
     try:
-        # Query patient data
-        patient_data = await ops._query_patient_data(patient_id)
-        
-        # Perform analysis based on report type
-        analysis_results = await ops._perform_deep_analysis(
-            patient_data=patient_data,
-            analysis_type=f"report_{report_type}",
-            parameters={
-                "start_date": start_date.isoformat() if start_date else None,
-                "end_date": end_date.isoformat() if end_date else None
-            }
+        simulation_result = await ops.simulate_scenario(
+            simulation_request,
+            background_tasks
         )
         
-        # Generate report
-        report = await ops._generate_report(
-            patient_id=patient_id,
-            analysis_results=analysis_results
-        )
-        
-        return HealthcareResponse(
-            status="success",
-            message="Patient report generated successfully",
-            data={
-                "patient": patient_data.dict(),
-                "report": report
-            }
-        )
-        
+        response_data = {
+            "status": "success",
+            "message": "Simulation completed successfully",
+            "simulation_id": simulation_result.simulation_id,
+            "results": simulation_result.results,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        logger.info(f"Successfully completed simulation")
+        logger.debug(f"Simulation result: {json.dumps(response_data, indent=2)}")
+        return response_data
     except Exception as e:
+        error_msg = f"Error simulating scenario: {str(e)}"
+        logger.error(error_msg)
         raise HTTPException(
             status_code=500,
-            detail=f"Error generating patient report: {str(e)}"
+            detail=error_msg
         )
 
-@router.post("/predict/clinical", response_model=HealthcareResponse)
-async def predict_clinical_outcome(
-    patient_id: UUID,
-    prediction_params: Dict[str, Any],
-    current_user: User = Depends(get_current_user)
-) -> HealthcareResponse:
+@router.post("/healthcare/validate")
+async def validate_protocol(
+    request: Request,
+    validation_request: ValidationRequest,
+    background_tasks: BackgroundTasks
+) -> Dict[str, Any]:
     """
-    Generate clinical predictions using M3-optimized machine learning models.
-    Leverages Metal framework for accelerated inference.
+    Validate patient protocol using M3-optimized processing.
+    This endpoint leverages Metal framework acceleration for rapid validation.
     """
+    logger.info(f"Processing validate_protocol request")
+    logger.debug(f"Request path: {request.url.path}")
+    logger.debug(f"Validation request: {json.dumps(validation_request.dict(), indent=2)}")
+    
     try:
-        # Process prediction scenario
-        response = await ops.process_patient_scenario(
-            patient_id=patient_id,
-            analysis_type="clinical_prediction",
-            parameters=prediction_params
+        validation_result = await ops.validate_protocol(
+            validation_request,
+            background_tasks
         )
         
-        return response
-        
+        response_data = {
+            "status": "success",
+            "message": "Validation completed successfully",
+            "validation_id": validation_result.validation_id,
+            "results": validation_result.results,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        logger.info(f"Successfully completed validation")
+        logger.debug(f"Validation result: {json.dumps(response_data, indent=2)}")
+        return response_data
     except Exception as e:
+        error_msg = f"Error validating protocol: {str(e)}"
+        logger.error(error_msg)
         raise HTTPException(
             status_code=500,
-            detail=f"Error generating clinical prediction: {str(e)}"
+            detail=error_msg
         )
-
-@router.post("/optimize/treatment", response_model=HealthcareResponse)
-async def optimize_treatment_plan(
-    patient_id: UUID,
-    treatment_params: Dict[str, Any],
-    current_user: User = Depends(get_current_user)
-) -> HealthcareResponse:
-    """
-    Optimize treatment plans using M3 acceleration and quantum-inspired algorithms.
-    Considers multiple factors for personalized treatment optimization.
-    """
-    try:
-        # Process treatment optimization
-        response = await ops.process_patient_scenario(
-            patient_id=patient_id,
-            analysis_type="treatment_optimization",
-            parameters=treatment_params
-        )
-        
-        return response
-        
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error optimizing treatment plan: {str(e)}"
-        )
-
-async def _perform_extended_analysis(
-    patient_id: UUID,
-    analysis_request: AnalysisRequest
-) -> None:
-    """
-    Perform extended background analysis for deeper insights.
-    This runs asynchronously after the initial analysis.
-    """
-    try:
-        # Perform extended analysis with higher optimization level
-        await ops.process_patient_scenario(
-            patient_id=patient_id,
-            analysis_type=f"{analysis_request.analysis_type}_extended",
-            parameters={
-                **analysis_request.parameters,
-                "optimization_level": "maximum",
-                "include_historical_data": True,
-                "run_advanced_models": True
-            }
-        )
-    except Exception as e:
-        # Log error but don't raise it since this is a background task
-        logger.error(f"Error in extended analysis for patient {patient_id}: {str(e)}")

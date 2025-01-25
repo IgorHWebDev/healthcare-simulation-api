@@ -1,9 +1,9 @@
-{
+  {
   "openapi": "3.1.0",
   "info": {
     "title": "Healthcare Simulation API",
-    "description": "API for healthcare simulation and protocol validation with quantum-safe security",
-    "version": "0.1.0",
+    "description": "API for healthcare simulation, patient analysis, and protocol validation with quantum-safe security and M3 optimization",
+    "version": "0.2.0",
     "contact": {
       "name": "Healthcare Simulation Team",
       "url": "https://healthcare-simulation-api.onrender.com"
@@ -12,33 +12,58 @@
   "servers": [
     {
       "url": "https://healthcare-simulation-api.onrender.com",
-      "description": "Production server"
-    },
-    {
-      "url": "http://localhost:8000",
-      "description": "Local development server"
+      "description": "Production API Server"
     }
   ],
   "paths": {
-    "/health": {
-      "get": {
-        "summary": "Health Check",
-        "description": "Check if the API is operational",
-        "operationId": "health_check",
-        "tags": ["System"],
+    "/api/v1/healthcare/patients": {
+      "post": {
+        "summary": "Create Patient",
+        "description": "Create a new patient record with comprehensive health data",
+        "operationId": "create_patient",
+        "tags": ["Patient Management"],
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatientCreate"
+              }
+            }
+          }
+        },
         "responses": {
-          "200": {
-            "description": "API is healthy",
+          "201": {
+            "description": "Patient created successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "string",
-                      "example": "ok"
-                    }
-                  }
+                  "$ref": "#/components/schemas/PatientResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             }
@@ -46,7 +71,84 @@
         }
       }
     },
-    "/v1/healthcare/simulate": {
+    "/api/v1/healthcare/analyze/{patient_id}": {
+      "post": {
+        "summary": "Analyze Patient",
+        "description": "Perform comprehensive patient analysis using M3-optimized algorithms",
+        "operationId": "analyze_patient",
+        "tags": ["Patient Analysis"],
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUID of the patient"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalysisRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Analysis completed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Patient not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/healthcare/simulate": {
       "post": {
         "summary": "Simulate Healthcare Scenario",
         "description": "Simulate a healthcare scenario and get step-by-step guidance",
@@ -101,7 +203,7 @@
         }
       }
     },
-    "/v1/healthcare/validate": {
+    "/api/v1/healthcare/validate": {
       "post": {
         "summary": "Validate Healthcare Protocol",
         "description": "Validate healthcare protocols against established guidelines",
@@ -415,6 +517,167 @@
             "description": "Error message"
           }
         }
+      },
+      "PatientCreate": {
+        "type": "object",
+        "required": ["mrn", "first_name", "last_name", "date_of_birth", "age", "gender", "vital_signs"],
+        "properties": {
+          "mrn": {
+            "type": "string",
+            "description": "Medical Record Number"
+          },
+          "first_name": {
+            "type": "string"
+          },
+          "last_name": {
+            "type": "string"
+          },
+          "date_of_birth": {
+            "type": "string",
+            "format": "date"
+          },
+          "age": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "gender": {
+            "type": "string",
+            "enum": ["male", "female", "other"]
+          },
+          "vital_signs": {
+            "$ref": "#/components/schemas/VitalSigns"
+          }
+        }
+      },
+      "AnalysisRequest": {
+        "type": "object",
+        "required": ["patient_ids", "analysis_type"],
+        "properties": {
+          "patient_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "analysis_type": {
+            "type": "string",
+            "enum": ["risk_assessment", "treatment_response", "complication_prediction"]
+          }
+        }
+      },
+      "AnalysisResponse": {
+        "type": "object",
+        "required": ["status", "data"],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["success", "error"]
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "analysis": {
+                "type": "object",
+                "properties": {
+                  "summary": {
+                    "type": "object",
+                    "properties": {
+                      "patient_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "analysis_type": {
+                        "type": "string"
+                      },
+                      "timestamp": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "confidence_score": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "predictions": {
+                    "type": "object",
+                    "properties": {
+                      "risk_level": {
+                        "type": "string",
+                        "enum": ["low", "moderate", "high", "critical"]
+                      },
+                      "confidence": {
+                        "type": "number",
+                        "format": "float",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "probability": {
+                        "type": "number",
+                        "format": "float",
+                        "minimum": 0,
+                        "maximum": 1
+                      }
+                    }
+                  },
+                  "risk_factors": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "factor": {
+                          "type": "string"
+                        },
+                        "severity": {
+                          "type": "string",
+                          "enum": ["low", "medium", "high"]
+                        }
+                      }
+                    }
+                  },
+                  "action_items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "action": {
+                          "type": "string"
+                        },
+                        "priority": {
+                          "type": "string",
+                          "enum": ["low", "medium", "high"]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": ["pending", "in_progress", "completed"]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "PatientResponse": {
+        "type": "object",
+        "required": ["status", "data"],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["success", "error"]
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "patient_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          }
+        }
       }
     },
     "securitySchemes": {
@@ -425,4 +688,4 @@
       }
     }
   }
-} 
+}

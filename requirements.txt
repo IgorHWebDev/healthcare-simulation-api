@@ -1,16 +1,22 @@
 # Core Dependencies
 fastapi==0.104.1
-uvicorn==0.24.0
+uvicorn[standard]==0.24.0
 pydantic==2.5.1
 python-jose[cryptography]==3.3.0
 httpx==0.25.1
 python-multipart==0.0.6
 python-dotenv==1.0.0
+PyJWT==2.8.0
 
 # Database Dependencies
 psycopg2-binary==2.9.9
 SQLAlchemy==2.0.25
 alembic==1.13.1
+redis==5.0.1
+
+# Task Queue Dependencies
+celery==5.3.6
+flower==2.0.1
 
 # Testing Dependencies
 pytest==7.4.3
@@ -23,3 +29,12 @@ flake8==6.1.0
 
 # Security Dependencies
 cryptography==42.0.2
+passlib[bcrypt]==1.7.4
+
+# Monitoring Dependencies
+prometheus-client==0.19.0
+statsd==4.0.1
+
+# Performance Dependencies
+uvloop==0.19.0
+httptools==0.6.1
