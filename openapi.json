@@ -2,31 +2,56 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Healthcare Simulation API",
-    "description": "Emergency response simulation API for immediate first aid and paramedic treatments",
-    "version": "v1.0.0",
+    "description": "API for healthcare simulation and protocol validation with quantum-safe security",
+    "version": "0.1.0",
     "contact": {
       "name": "Healthcare Simulation Team",
-      "email": "support@healthcare-sim.dev"
+      "url": "https://healthcare-simulation-api.onrender.com"
     }
   },
   "servers": [
     {
       "url": "https://healthcare-simulation-api.onrender.com",
-      "description": "Production Render API Server"
-    }
-  ],
-  "security": [
+      "description": "Production server"
+    },
     {
-      "ApiKeyAuth": []
+      "url": "http://localhost:8000",
+      "description": "Local development server"
     }
   ],
   "paths": {
-    "/simulate": {
+    "/health": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Check if the API is operational",
+        "operationId": "health_check",
+        "tags": ["System"],
+        "responses": {
+          "200": {
+            "description": "API is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/healthcare/simulate": {
       "post": {
-        "summary": "Emergency Response Simulation",
-        "description": "Process an emergency medical scenario and provide immediate response recommendations",
-        "operationId": "simulateEmergency",
-        "tags": ["Simulation"],
+        "summary": "Simulate Healthcare Scenario",
+        "description": "Simulate a healthcare scenario and get step-by-step guidance",
+        "operationId": "simulate_scenario",
+        "tags": ["Healthcare Simulation"],
         "security": [
           {
             "ApiKeyAuth": []
@@ -44,7 +69,7 @@
         },
         "responses": {
           "200": {
-            "description": "Successful emergency response simulation",
+            "description": "Successful simulation",
             "content": {
               "application/json": {
                 "schema": {
@@ -54,7 +79,7 @@
             }
           },
           "401": {
-            "description": "Unauthorized - Invalid or missing API key",
+            "description": "Unauthorized",
             "content": {
               "application/json": {
                 "schema": {
@@ -63,8 +88,63 @@
               }
             }
           },
-          "500": {
-            "description": "Internal server error",
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/healthcare/validate": {
+      "post": {
+        "summary": "Validate Healthcare Protocol",
+        "description": "Validate healthcare protocols against established guidelines",
+        "operationId": "validate_protocol",
+        "tags": ["Healthcare Simulation"],
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
             "content": {
               "application/json": {
                 "schema": {
@@ -78,56 +158,245 @@
     }
   },
   "components": {
-    "securitySchemes": {
-      "ApiKeyAuth": {
-        "type": "apiKey",
-        "in": "header",
-        "name": "X-API-Key",
-        "description": "API key for authentication"
-      }
-    },
     "schemas": {
+      "PatientStatus": {
+        "type": "string",
+        "enum": ["יציב", "לא יציב", "קריטי"],
+        "description": "Patient status in Hebrew"
+      },
+      "ProtocolType": {
+        "type": "string",
+        "enum": ["ACLS", "BLS", "PALS", "TRAUMA"],
+        "description": "Type of medical protocol"
+      },
+      "VitalSigns": {
+        "type": "object",
+        "properties": {
+          "❤️ דופק": {
+            "type": "string",
+            "description": "Heart rate"
+          },
+          "🫁 נשימות": {
+            "type": "string",
+            "description": "Respiratory rate"
+          },
+          "🌡️ חום": {
+            "type": "string",
+            "description": "Temperature"
+          },
+          "⚡ לחץ דם": {
+            "type": "string",
+            "description": "Blood pressure"
+          }
+        }
+      },
+      "Action": {
+        "type": "object",
+        "required": ["action", "details"],
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "Action to be taken"
+          },
+          "details": {
+            "type": "string",
+            "description": "Detailed description of the action"
+          },
+          "references": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Reference materials"
+          }
+        }
+      },
+      "Step": {
+        "type": "object",
+        "required": ["step", "description", "actions"],
+        "properties": {
+          "step": {
+            "type": "integer",
+            "description": "Step number"
+          },
+          "description": {
+            "type": "string",
+            "description": "Step description"
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Action"
+            }
+          }
+        }
+      },
       "SimulationRequest": {
         "type": "object",
-        "required": ["message"],
+        "required": ["title", "actors", "steps"],
         "properties": {
-          "message": {
+          "title": {
             "type": "string",
-            "description": "Emergency scenario description",
-            "example": "A 50-year-old man collapsed suddenly at a family gathering. He is unresponsive and not breathing."
+            "description": "Simulation scenario title"
+          },
+          "actors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Participants in the simulation"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Step"
+            }
+          }
+        }
+      },
+      "NextStep": {
+        "type": "object",
+        "required": ["action", "protocol_reference", "expected_outcome"],
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "Next action to take"
+          },
+          "protocol_reference": {
+            "type": "string",
+            "description": "Reference to medical protocol"
+          },
+          "expected_outcome": {
+            "type": "string",
+            "description": "Expected outcome of the action"
           }
         }
       },
       "SimulationResponse": {
         "type": "object",
-        "required": ["response"],
+        "required": ["scenario_id", "current_state", "next_steps", "feedback"],
         "properties": {
-          "response": {
+          "scenario_id": {
             "type": "string",
-            "description": "Emergency response and treatment recommendations"
+            "description": "Unique identifier for the simulation"
           },
-          "vital_signs": {
+          "current_state": {
             "type": "object",
             "properties": {
-              "heart_rate": {
-                "type": "string",
-                "description": "Heart rate with emoji",
-                "example": "❤️ 72"
+              "patient_status": {
+                "$ref": "#/components/schemas/PatientStatus"
               },
-              "blood_pressure": {
-                "type": "string",
-                "description": "Blood pressure with emoji",
-                "example": "⚡ 120/80"
+              "vital_signs": {
+                "$ref": "#/components/schemas/VitalSigns"
               },
-              "temperature": {
-                "type": "string",
-                "description": "Temperature with emoji",
-                "example": "🌡️ 36.5"
+              "current_interventions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "next_steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NextStep"
+            }
+          },
+          "feedback": {
+            "type": "object",
+            "properties": {
+              "correct_actions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
               },
-              "respiratory_rate": {
-                "type": "string",
-                "description": "Respiratory rate with emoji",
-                "example": "🫁 16"
+              "suggestions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "protocol_adherence": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100,
+                "description": "Protocol adherence score"
+              }
+            }
+          }
+        }
+      },
+      "ValidationRequest": {
+        "type": "object",
+        "required": ["protocol_type", "actions"],
+        "properties": {
+          "protocol_type": {
+            "$ref": "#/components/schemas/ProtocolType"
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of actions to validate"
+          },
+          "patient_context": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Additional patient context"
+          }
+        }
+      },
+      "ValidationResponse": {
+        "type": "object",
+        "required": ["is_valid", "score"],
+        "properties": {
+          "is_valid": {
+            "type": "boolean",
+            "description": "Whether the protocol is valid"
+          },
+          "score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Validation score"
+          },
+          "feedback": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "step": {
+                  "type": "integer"
+                },
+                "action": {
+                  "type": "string"
+                },
+                "is_correct": {
+                  "type": "boolean"
+                },
+                "correction": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "references": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "protocol": {
+                  "type": "string"
+                },
+                "section": {
+                  "type": "string"
+                },
+                "details": {
+                  "type": "string"
+                }
               }
             }
           }
@@ -135,13 +404,24 @@
       },
       "Error": {
         "type": "object",
-        "required": ["error"],
+        "required": ["code", "message"],
         "properties": {
-          "error": {
+          "code": {
             "type": "string",
-            "example": "Internal server error occurred"
+            "description": "Error code"
+          },
+          "message": {
+            "type": "string",
+            "description": "Error message"
           }
         }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
       }
     }
   }

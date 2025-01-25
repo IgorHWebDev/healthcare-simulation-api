@@ -260,9 +260,28 @@
 
             subgraph Healthcare["Healthcare Features (⏳)"]
                 direction TB
-                Proto["Protocol Library (✅)"] --> Scen["Scenario Generator (✅)"]
-                Scen --> Valid["Clinical Validation (⏳)"]
-                Valid --> Report["Reporting System (🔲)"]
+                subgraph Imaging["Imaging & Diagnostics"]
+                    DP["DigitalPathologyAgent"]
+                    RAD["RadiologyAgent"]
+                end
+                
+                subgraph Clinical["Clinical Specialties"]
+                    CARD["CardiologyAgent"]
+                    GEN["GenomicsAgent"]
+                    IMM["ImmunologyAgent"]
+                end
+                
+                subgraph Remote["Remote Care"]
+                    TELE["TelemedicineAgent"]
+                    REHAB["RehabilitationAgent"]
+                    BH["BehavioralHealthAgent"]
+                end
+                
+                subgraph Safety["Safety & Wellness"]
+                    PHARM["PharmacovigilanceAgent"]
+                    NUT["NutritionAndWellnessAgent"]
+                    SEC["SecurityComplianceAgent"]
+                end
             end
 
             subgraph Monitor["Monitoring (⏳)"]
@@ -1901,6 +1920,166 @@ class NFTManager:
         </div>
     </div>
 
+    <!-- =============================================================================
+         NEW SECTION: 35. MIMIC-4 Integration Architecture
+    ============================================================================= -->
+    <div class="diagram-container">
+        <h2>35. MIMIC-4 Integration Architecture</h2>
+        <div class="description">
+            Comprehensive integration of MIMIC-4 demo database with interchangeable database support and AutoGen framework embedding.
+        </div>
+        <div class="mermaid">
+        flowchart TB
+            subgraph MIMIC4["MIMIC-4 Integration Layer"]
+                direction TB
+                M4Core["MIMIC-4 Core Tables"]
+                M4Views["Standardized Views"]
+                M4ETL["ETL Pipeline"]
+                M4API["Database API"]
+                
+                M4Core --> M4Views
+                M4Views --> M4ETL
+                M4ETL --> M4API
+            end
+
+            subgraph DBAbstraction["Database Abstraction Layer"]
+                direction TB
+                DBInterface["Database Interface"]
+                DBFactory["Database Factory"]
+                DBValidation["Schema Validation"]
+                
+                DBInterface --> DBFactory
+                DBFactory --> DBValidation
+            end
+
+            subgraph AutoGenInt["AutoGen Integration"]
+                direction TB
+                AGAdapter["AutoGen DB Adapter"]
+                AGQueries["Healthcare Queries"]
+                AGModels["Clinical Models"]
+                
+                AGAdapter --> AGQueries
+                AGQueries --> AGModels
+            end
+
+            subgraph DataTypes["Healthcare Data Types"]
+                direction TB
+                Clinical["Clinical Data"]
+                Lab["Laboratory Results"]
+                Vital["Vital Signs"]
+                Med["Medications"]
+                
+                Clinical --> DataMap["Data Mapping"]
+                Lab --> DataMap
+                Vital --> DataMap
+                Med --> DataMap
+            end
+
+            MIMIC4 --> DBAbstraction
+            DBAbstraction --> AutoGenInt
+            DataTypes --> DBAbstraction
+            
+            class MIMIC4,DBAbstraction,AutoGenInt,DataTypes database
+        </div>
+    </div>
+
+    <!-- =============================================================================
+         NEW SECTION: 36. Database Interchangeability Framework
+    ============================================================================= -->
+    <div class="diagram-container">
+        <h2>36. Database Interchangeability Framework</h2>
+        <div class="description">
+            Framework for supporting multiple database backends while maintaining consistent healthcare data models.
+        </div>
+        <div class="mermaid">
+        classDiagram
+            class DatabaseInterface {
+                <<interface>>
+                +connect()
+                +query()
+                +store()
+                +validate_schema()
+            }
+            
+            class MIMIC4Adapter {
+                -connection: Connection
+                -schema: Schema
+                +connect()
+                +query()
+                +store()
+                +validate_schema()
+            }
+            
+            class CustomDBAdapter {
+                -connection: Connection
+                -schema: Schema
+                +connect()
+                +query()
+                +store()
+                +validate_schema()
+            }
+            
+            class DataModel {
+                +patient_data: Dict
+                +clinical_events: List
+                +lab_results: List
+                +medications: List
+                +validate()
+                +transform()
+            }
+            
+            DatabaseInterface <|.. MIMIC4Adapter
+            DatabaseInterface <|.. CustomDBAdapter
+            DataModel --> DatabaseInterface
+        </div>
+    </div>
+
+    <!-- =============================================================================
+         NEW SECTION: 37. AutoGen Healthcare Framework Integration
+    ============================================================================= -->
+    <div class="diagram-container">
+        <h2>37. AutoGen Healthcare Framework Integration</h2>
+        <div class="description">
+            Enhanced AutoGen framework integration with healthcare-specific components and database interactions.
+        </div>
+        <div class="mermaid">
+        flowchart TB
+            subgraph AutoGenCore["AutoGen Core"]
+                direction TB
+                AGBase["Base Agent"]
+                AGConfig["Configuration"]
+                AGRouter["Model Router"]
+            end
+
+            subgraph HealthcareAgents["Healthcare Agents"]
+                direction TB
+                ClinicalAgent["Clinical Analysis"]
+                DiagnosticAgent["Diagnostic Support"]
+                ResearchAgent["Research Assistant"]
+            end
+
+            subgraph DatabaseLayer["Database Integration"]
+                direction TB
+                DBAccess["Data Access"]
+                QueryGen["Query Generation"]
+                DataValid["Data Validation"]
+            end
+
+            subgraph ModelLayer["Model Integration"]
+                direction TB
+                LocalModels["Local Healthcare Models"]
+                RemoteModels["Remote GPT Models"]
+                ModelSelect["Model Selection Logic"]
+            end
+
+            AutoGenCore --> HealthcareAgents
+            HealthcareAgents --> DatabaseLayer
+            DatabaseLayer --> ModelLayer
+            
+            class AutoGenCore,HealthcareAgents,DatabaseLayer,ModelLayer autogen
+        </div>
+    </div>
+
     <script>
         mermaid.initialize({
             startOnLoad: true,
@@ -1913,4 +2092,4 @@ class NFTManager:
         });
     </script>
 </body>
-</html> 
+</html>

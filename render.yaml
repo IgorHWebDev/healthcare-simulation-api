@@ -2,9 +2,9 @@ services:
   - type: web
     name: healthcare-simulation-api
     env: python
-    plan: free
+    plan: standard
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn src.healthcare_simulation.app:app --host 0.0.0.0 --port $PORT
+    startCommand: uvicorn src.api.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
@@ -16,11 +16,40 @@ services:
         value: production
       - key: DEBUG
         value: false
-    healthCheckPath: /health
+      - key: DATABASE_URL
+        fromDatabase:
+          name: healthcare-db
+          property: connectionString
+      - key: M3_OPTIMIZER_ENABLED
+        value: true
+      - key: METAL_FRAMEWORK_ENABLED
+        value: true
+      - key: BATCH_SIZE
+        value: 256
+      - key: MAX_PARALLEL_CIRCUITS
+        value: 1000
+    healthCheckPath: /api/v1/health
     autoDeploy: true
     domains:
       - healthcare-simulation-api.onrender.com
     routes:
       - type: rewrite
         source: /*
-        destination: / 
+        destination: /
+
+  - type: redis
+    name: healthcare-cache
+    ipAllowList: []
+    plan: free
+    maxmemoryPolicy: noeviction
+
+  - type: postgresql
+    name: healthcare-db
+    plan: free
+    ipAllowList: []
+    postgresMajorVersion: 16
+    properties:
+      databaseName: healthcare_db
+      user: healthcare
+      maxConnections: 20
+      sslMode: require

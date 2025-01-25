@@ -1,0 +1,30 @@
+Open Data Commons Open Database License v1.0
+
+This implementation uses the MIMIC-IV Clinical Database Demo (version 2.2) which is licensed under the Open Data Commons Open Database License v1.0.
+
+Required Citations:
+
+1. MIMIC-IV Clinical Database Demo:
+Johnson, A., Bulgarelli, L., Pollard, T., Horng, S., Celi, L. A., & Mark, R. (2023). 
+MIMIC-IV Clinical Database Demo (version 2.2). PhysioNet. 
+https://doi.org/10.13026/dp1f-ex47
+
+2. PhysioNet Citation:
+Goldberger, A., Amaral, L., Glass, L., Hausdorff, J., Ivanov, P. C., Mark, R., ... & Stanley, H. E. (2000).
+PhysioBank, PhysioToolkit, and PhysioNet: Components of a new research resource for complex physiologic signals.
+Circulation [Online]. 101 (23), pp. e215–e220
+
+Usage Requirements:
+1. All publications using this data must include the above citations
+2. Users must comply with the Open Data Commons Open Database License v1.0
+3. Data must be used in accordance with HIPAA Safe Harbor provisions
+4. Any modifications or derivations must maintain deidentification standards
+
+This implementation includes:
+- Proper citation management
+- HIPAA compliance tracking
+- Data access logging
+- PHI protection measures
+- Usage tracking and verification
+
+For more information about MIMIC-IV, visit: https://mimic.mit.edu/

@@ -1,7 +1,12 @@
-# Environment variables
+# Environment and secrets
 .env
 .env.*
 !.env.example
+docker-compose.yml
+!docker-compose.yml.example
+*.pem
+*.key
+secrets/
 
 # Python
 __pycache__/
@@ -27,19 +32,69 @@ wheels/
 
 # Virtual Environment
 venv/
-env/
 ENV/
+env/
+.env/
+.venv/
 
 # IDE
 .idea/
 .vscode/
 *.swp
 *.swo
+.DS_Store
+
+# Test coverage
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+.tox/
+nosetests.xml
+coverage/
 
 # Logs
 *.log
 logs/
+log/
 
-# Local development
+# Database
 *.sqlite3
-.DS_Store 
+*.db
+postgres-data/
+redis-data/
+
+# Build and temp files
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.dylib
+*.dll
+*.bak
+*.tmp
+*~
+
+# Documentation
+docs/_build/
+site/
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+# Metal framework
+metal_cache/
+.metal/
+*.metallib
+
+# M3 Optimizer
+optimizer_cache/
+.m3/
+*.opt
+
+# Healthcare specific
+patient_data/
+clinical_records/
+lab_results/

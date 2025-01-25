@@ -1,82 +1,187 @@
 # IQHIS Monitoring Setup
 
-## Current State (2024-03-21)
+## 1. Overview
 
-### 1. Components
-- **Prometheus**: Metrics collection and alerting
+The IQHIS monitoring system provides comprehensive observability across all system components, with special focus on quantum-resistant operations and healthcare compliance.
+
+## 2. Components
+
+### Core Monitoring
+- **Prometheus**: Metrics collection and storage
 - **Grafana**: Visualization and dashboards
-- **Alert Rules**: Critical system monitoring
-- **Service Endpoints**: Quantum, AutoGen, and Ollama metrics
+- **AlertManager**: Alert routing and notification
+- **Node Exporter**: System metrics collection
 
-### 2. Configuration Files
-```
-monitoring/
-├── prometheus.yml          # Prometheus configuration
-├── alert_rules.yml        # Alert definitions
-└── grafana/
-    └── dashboards/
-        └── iqhis-overview.json  # Main dashboard
-```
+### Custom Exporters
+- **Quantum Metrics**: Quantum operation statistics
+- **Healthcare Metrics**: Clinical operation metrics
+- **AutoGen Metrics**: Model performance data
+- **IOTA Metrics**: Blockchain metrics
 
-### 3. Metrics Coverage
+## 3. Metrics Coverage
 
-#### 3.1 Quantum Agent Metrics
+### Quantum Layer
 - Key rotation timing
 - Encryption operations count
-- Service health status
-- Encryption failures
+- Quantum circuit performance
+- Security validation metrics
 
-#### 3.2 AutoGen Coordinator Metrics
-- Model response times
-- Service health status
-- Request latency
+### Healthcare Layer
+- Response times
+- Success rates
+- Protocol adherence
+- Compliance checks
 
-#### 3.3 Ollama Metrics
-- Service availability
-- Model loading status
+### Infrastructure Layer
+- System resources
+- Container health
+- Network metrics
+- Storage metrics
 
-### 4. Alert Configuration
+## 4. Alert Configuration
 
-#### 4.1 Critical Alerts
-- Quantum key rotation delays (24h threshold)
-- Service downtime (1m threshold)
-- Encryption failures
-- Compliance check failures
+### Critical Alerts
+```yaml
+groups:
+  - name: quantum_alerts
+    rules:
+      - alert: QuantumKeyRotationDelay
+        expr: time() - quantum_last_key_rotation > 86400
+        labels:
+          severity: critical
+        annotations:
+          summary: "Quantum key rotation delayed"
 
-#### 4.2 Warning Alerts
-- High model latency (>10s)
+  - name: healthcare_alerts
+    rules:
+      - alert: HighResponseTime
+        expr: healthcare_response_time_seconds > 5
+        labels:
+          severity: warning
+        annotations:
+          summary: "High healthcare response time"
+```
 
-### 5. Dashboard Overview
-- Total encryption operations gauge
-- Model response time trends
-- 5-second refresh rate
-- 6-hour time window default
+## 5. Dashboards
 
-### 6. Compliance Monitoring
-- Encryption failure tracking
-- Compliance check status
-- Audit logging setup
+### Main Dashboard
+- System health overview
+- Key performance indicators
+- Alert status
+- Resource utilization
 
-### 7. Backup Information
-- Location: `backups/monitoring/`
-- Frequency: Manual backups during major changes
-- Last backup: 2024-03-21
+### Quantum Dashboard
+- Encryption operations
+- Key management
+- Security metrics
+- Performance data
 
-### 8. Next Steps
-1. Enable alert_rules.yml in prometheus.yml
-2. Set up AlertManager for notification routing
-3. Add compliance-specific dashboard
-4. Implement metric exporters in services
+### Healthcare Dashboard
+- Clinical operations
+- Protocol validation
+- Compliance status
+- Error rates
 
-### 9. Validation Status
-- [ ] Prometheus configuration validated
-- [ ] Alert rules tested
-- [ ] Grafana dashboard imported
-- [ ] Service metrics verified
-- [ ] Backup procedure tested
+## 6. Backup Configuration
 
-### 10. Security Considerations
-- Metrics endpoints require authentication
-- Dashboard access controlled
-- Sensitive data excluded from metrics
-- Encryption status monitored 
+### Metrics Data
+- Retention period: 30 days
+- Backup frequency: Daily
+- Storage location: Secure cloud storage
+- Encryption: Quantum-resistant
+
+### Dashboard Configuration
+- Version control: Git
+- Backup frequency: On change
+- Recovery procedure: Documented
+- Access control: RBAC
+
+## 7. Security Considerations
+
+### Access Control
+- Role-based access
+- Multi-factor authentication
+- Audit logging
+- Session management
+
+### Data Protection
+- Encrypted metrics
+- Secure transport
+- Data anonymization
+- Access auditing
+
+## 8. Deployment
+
+### Prerequisites
+```bash
+# Install core components
+helm install prometheus prometheus-community/prometheus
+helm install grafana grafana/grafana
+helm install alertmanager prometheus-community/alertmanager
+```
+
+### Configuration
+```yaml
+# prometheus.yml
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'quantum_metrics'
+    static_configs:
+      - targets: ['quantum-agent:8000']
+
+  - job_name: 'healthcare_metrics'
+    static_configs:
+      - targets: ['healthcare-api:8000']
+```
+
+## 9. Maintenance
+
+### Regular Tasks
+- Dashboard updates
+- Alert tuning
+- Performance optimization
+- Backup verification
+
+### Troubleshooting
+- Metric collection issues
+- Alert configuration
+- Dashboard problems
+- Backup/restore
+
+## 10. Integration Points
+
+### CI/CD Pipeline
+- Automated deployment
+- Configuration validation
+- Version control
+- Rollback procedures
+
+### Logging System
+- Log correlation
+- Metric correlation
+- Error tracking
+- Performance analysis
+
+## 11. Future Enhancements
+
+### Planned Features
+- Advanced analytics
+- ML-based alerting
+- Automated remediation
+- Enhanced visualization
+
+### Roadmap
+1. Implement advanced quantum metrics
+2. Enhance healthcare dashboards
+3. Add ML-based anomaly detection
+4. Improve alert correlation
+
+## 12. Contact Information
+
+- Monitoring Team: [Contact]
+- Security Team: [Contact]
+- DevOps Team: [Contact]
+- Emergency Support: [Contact] 
