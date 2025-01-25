@@ -50,10 +50,6 @@ DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = os.getenv("DB_PORT", "5432")
 DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
-# API Key configuration
-API_KEY = os.getenv("API_KEY", "rnd_Z3muoAk3bhxOVj1laxjUV6Uv8hL")
-api_key_header = APIKeyHeader(name="X-API-Key")
-
 # Initialize FastAPI app
 app = FastAPI(
     title="Healthcare Simulation API",
@@ -65,43 +61,50 @@ app = FastAPI(
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"],  # Allows all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# Initialize security
-async def verify_api_key_middleware(request: Request, call_next):
-    """Verify API key middleware."""
-    path = request.url.path
-    if path.startswith("/health"):
-        logger.debug(f"Skipping API key verification for excluded path: {path}")
-        response = await call_next(request)
-        return response
+# Initialize API key header
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=True)
 
+async def get_api_key(api_key: str = Depends(api_key_header)):
+    """Verify API key."""
+    if api_key != os.getenv("API_KEY"):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid API key"
+        )
+    return api_key
+
+async def verify_api_key_middleware(request: Request, call_next):
+    """Middleware to verify API key."""
     try:
-        if "X-API-Key" not in request.headers:
-            logger.warning(f"Missing API key for path: {path}")
+        if request.url.path in ["/health", "/docs", "/redoc", "/openapi.json"]:
+            return await call_next(request)
+            
+        api_key = request.headers.get("X-API-Key")
+        if not api_key:
             return JSONResponse(
-                status_code=status.HTTP_403_FORBIDDEN,
-                content={"detail": "API key is missing"}
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                content={"detail": "API key required"}
             )
-        api_key = request.headers["X-API-Key"]
-        if api_key != API_KEY:
-            logger.warning(f"Invalid API key for path: {path}")
+            
+        if api_key != os.getenv("API_KEY"):
             return JSONResponse(
-                status_code=status.HTTP_403_FORBIDDEN,
+                status_code=status.HTTP_401_UNAUTHORIZED,
                 content={"detail": "Invalid API key"}
             )
-        logger.debug(f"API key verified for path: {path}")
-        response = await call_next(request)
-        return response
+            
+        return await call_next(request)
+        
     except Exception as e:
-        logger.error(f"API key verification failed for path {path}: {str(e)}")
+        logger.error(f"Error in API key middleware: {str(e)}")
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"detail": "Internal server error during authentication"}
+            content={"detail": "Internal server error"}
         )
 
 app.middleware("http")(verify_api_key_middleware)
@@ -109,26 +112,32 @@ app.middleware("http")(verify_api_key_middleware)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifecycle management for the FastAPI application."""
-    # Initialize database
     try:
+        # Initialize database
         engine = create_engine(DATABASE_URL)
         Base.metadata.create_all(bind=engine)
         logger.info("Database initialized successfully")
-    except SQLAlchemyError as e:
-        logger.error(f"Database initialization error: {str(e)}")
         
-    # Initialize healthcare operations
-    app.state.healthcare_ops = HealthcareOperations(DATABASE_URL)
-    logger.info("Healthcare operations initialized")
-    
-    yield
-    
-    # Cleanup
-    logger.info("Shutting down application")
+        # Initialize M3 optimizations
+        if os.getenv("M3_OPTIMIZER_ENABLED", "true").lower() == "true":
+            logger.info("M3 optimizations enabled")
+            os.environ["VECLIB_MAXIMUM_THREADS"] = "8"
+            
+        # Initialize Metal framework
+        if os.getenv("METAL_FRAMEWORK_ENABLED", "true").lower() == "true":
+            logger.info("Metal framework enabled")
+            
+        yield
+        
+    except Exception as e:
+        logger.error(f"Error during startup: {str(e)}")
+        raise
+    finally:
+        logger.info("Shutting down application")
 
-# Add exception handlers
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
+    """Handle HTTP exceptions."""
     return JSONResponse(
         status_code=exc.status_code,
         content={"detail": exc.detail}
@@ -136,13 +145,13 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 
 @app.exception_handler(Exception)
 async def general_exception_handler(request: Request, exc: Exception):
-    logger.error(f"Unhandled exception: {str(exc)}", exc_info=True)
+    """Handle general exceptions."""
+    logger.error(f"Unhandled exception: {str(exc)}")
     return JSONResponse(
-        status_code=500,
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"detail": "Internal server error"}
     )
 
-# Health check endpoint
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
@@ -151,66 +160,66 @@ async def health_check():
         engine = create_engine(DATABASE_URL)
         with engine.connect() as conn:
             conn.execute("SELECT 1")
-        
+            
         return {
             "status": "healthy",
-            "database": "connected",
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
+            "version": "1.0.0",
+            "database_connection": "ok",
+            "environment": os.getenv("ENVIRONMENT", "production"),
+            "m3_optimizer": os.getenv("M3_OPTIMIZER_ENABLED", "true"),
+            "metal_framework": os.getenv("METAL_FRAMEWORK_ENABLED", "true")
         }
     except Exception as e:
         logger.error(f"Health check failed: {str(e)}")
         raise HTTPException(
-            status_code=503,
-            detail="Service unavailable"
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Service unhealthy"
         )
 
-# Patient simulation endpoints
-@app.post("/api/v1/healthcare/patients", response_model=HealthcareResponse, status_code=201)
+@app.post("/api/v1/patients", status_code=status.HTTP_201_CREATED)
 async def create_patient(
-    request: PatientCreateRequest
-) -> HealthcareResponse:
+    request: Request,
+    patient_data: PatientCreateRequest,
+    api_key: str = Depends(get_api_key)
+) -> Dict[str, Any]:
     """Create a new patient record."""
     try:
-        logging.info("Received patient data: %s", request.model_dump_json())
-        patient = await app.state.healthcare_ops.create_patient(request.patient_data)
-        return HealthcareResponse(
-            status="success",
-            message="Patient created successfully",
-            data={"patient_id": str(patient.id)}
-        )
-    except ValidationError as e:
-        logging.error("Validation error: %s", e.errors())
-        raise HTTPException(
-            status_code=422,
-            detail=f"Invalid request data: {e.errors()}"
-        )
+        ops = HealthcareOperations(DATABASE_URL)
+        patient_id = await ops.create_patient(patient_data)
+        
+        return {
+            "status": "success",
+            "message": "Patient created successfully",
+            "patient_id": str(patient_id),
+            "timestamp": datetime.utcnow().isoformat()
+        }
     except Exception as e:
-        logging.error("Failed to create patient: %s", str(e))
+        logger.error(f"Error creating patient: {str(e)}")
         raise HTTPException(
-            status_code=500,
-            detail=f"Failed to create patient: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error creating patient: {str(e)}"
         )
 
-@app.post("/api/v1/healthcare/analyze/{patient_id}", response_model=HealthcareResponse)
+@app.post("/api/v1/patients/{patient_id}/analyze")
 async def analyze_patient(
     patient_id: UUID,
-    analysis_request: AnalysisRequest
-) -> HealthcareResponse:
-    """
-    Process a patient scenario through the healthcare simulation model.
-    Uses LM Studio for analysis and predictions.
-    """
+    analysis_request: AnalysisRequest,
+    api_key: str = Depends(get_api_key)
+) -> Dict[str, Any]:
+    """Process a patient scenario through the healthcare simulation model."""
     try:
-        result = await app.state.healthcare_ops.process_patient_scenario(
+        ops = HealthcareOperations(DATABASE_URL)
+        analysis_result = await ops.analyze_patient(
             patient_id,
-            analysis_request.analysis_type,
-            analysis_request.parameters or {}
+            analysis_request
         )
-        return result
+        return analysis_result
+        
     except Exception as e:
         logger.error(f"Error analyzing patient {patient_id}: {str(e)}")
         raise HTTPException(
-            status_code=500,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error analyzing patient: {str(e)}"
         )
 
@@ -219,5 +228,5 @@ logger.info("Including healthcare router with prefix: /api/v1")
 app.include_router(
     render_router,
     prefix="/api/v1",
-    tags=["healthcare"]
+    dependencies=[Depends(get_api_key)]
 )
