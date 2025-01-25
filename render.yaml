@@ -15,7 +15,7 @@ services:
       - key: PORT
         value: 8000
       - key: API_KEY
-        sync: false
+        value: rnd_Z3muoAk3bhxOVj1laxjUV6Uv8hL
       - key: ENVIRONMENT
         value: production
       - key: DEBUG
