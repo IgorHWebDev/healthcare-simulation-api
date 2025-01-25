@@ -25,11 +25,12 @@ if src_path not in sys.path:
 
 from src.api.healthcare.operations import HealthcareOperations
 from src.api.healthcare.models import (
-    PatientData,
-    ClinicalPrediction,
-    AnalysisRequest,
-    HealthcareResponse,
-    PatientCreateRequest
+    SimulationRequest,
+    SimulationResponse,
+    ValidationRequest,
+    ValidationResponse,
+    VitalSigns,
+    PatientStatus
 )
 from src.api.database.models import Base
 from src.api.security.auth import User, create_access_token, get_current_user
@@ -53,8 +54,8 @@ DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NA
 # Initialize FastAPI app
 app = FastAPI(
     title="Healthcare Simulation API",
-    description="API for healthcare simulation and analysis, optimized for M3 silicon",
-    version="1.0.0",
+    description="Healthcare Simulation API powered by Ollama multi-model support",
+    version="0.1.0",
     lifespan=lifespan
 )
 
@@ -177,56 +178,44 @@ async def health_check():
             detail="Service unhealthy"
         )
 
-@app.post("/api/v1/patients", status_code=status.HTTP_201_CREATED)
-async def create_patient(
-    request: Request,
-    patient_data: PatientCreateRequest,
+@app.post("/v1/healthcare/simulate", response_model=SimulationResponse)
+async def simulate_scenario(
+    request: SimulationRequest,
     api_key: str = Depends(get_api_key)
-) -> Dict[str, Any]:
-    """Create a new patient record."""
+) -> SimulationResponse:
+    """Process a healthcare simulation scenario."""
     try:
         ops = HealthcareOperations(DATABASE_URL)
-        patient_id = await ops.create_patient(patient_data)
-        
-        return {
-            "status": "success",
-            "message": "Patient created successfully",
-            "patient_id": str(patient_id),
-            "timestamp": datetime.utcnow().isoformat()
-        }
+        simulation_result = await ops.simulate_scenario(request)
+        return simulation_result
     except Exception as e:
-        logger.error(f"Error creating patient: {str(e)}")
+        logger.error(f"Error in simulation: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error creating patient: {str(e)}"
+            detail=f"Error in simulation: {str(e)}"
         )
 
-@app.post("/api/v1/patients/{patient_id}/analyze")
-async def analyze_patient(
-    patient_id: UUID,
-    analysis_request: AnalysisRequest,
+@app.post("/v1/healthcare/validate", response_model=ValidationResponse)
+async def validate_protocol(
+    request: ValidationRequest,
     api_key: str = Depends(get_api_key)
-) -> Dict[str, Any]:
-    """Process a patient scenario through the healthcare simulation model."""
+) -> ValidationResponse:
+    """Validate a healthcare protocol."""
     try:
         ops = HealthcareOperations(DATABASE_URL)
-        analysis_result = await ops.analyze_patient(
-            patient_id,
-            analysis_request
-        )
-        return analysis_result
-        
+        validation_result = await ops.validate_protocol(request)
+        return validation_result
     except Exception as e:
-        logger.error(f"Error analyzing patient {patient_id}: {str(e)}")
+        logger.error(f"Error in validation: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error analyzing patient: {str(e)}"
+            detail=f"Error in validation: {str(e)}"
         )
 
 # Include Render-optimized endpoints
-logger.info("Including healthcare router with prefix: /api/v1")
+logger.info("Including healthcare router with prefix: /v1")
 app.include_router(
     render_router,
-    prefix="/api/v1",
+    prefix="/v1",
     dependencies=[Depends(get_api_key)]
 )
