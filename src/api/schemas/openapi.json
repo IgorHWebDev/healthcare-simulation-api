@@ -376,18 +376,31 @@
       },
       "GenerateRequest": {
         "type": "object",
-        "required": ["model", "prompt"],
+        "required": ["prompt", "model"],
         "properties": {
-          "model": {
-            "type": "string",
-            "description": "Name of the Ollama model"
-          },
           "prompt": {
             "type": "string",
-            "description": "Medical prompt"
+            "description": "The prompt to generate a response for"
+          },
+          "model": {
+            "type": "string",
+            "description": "The Ollama model to use",
+            "default": "healthcare-llm:latest"
           },
           "options": {
-            "$ref": "#/components/schemas/GenerationOptions"
+            "type": "object",
+            "properties": {
+              "temperature": {
+                "type": "number",
+                "description": "Sampling temperature",
+                "default": 0.7
+              },
+              "max_tokens": {
+                "type": "integer",
+                "description": "Maximum tokens to generate",
+                "default": 2048
+              }
+            }
           }
         }
       },
@@ -396,46 +409,68 @@
         "properties": {
           "response": {
             "type": "string",
-            "description": "Generated medical response"
+            "description": "Generated response text"
           },
-          "metadata": {
-            "type": "object",
-            "properties": {
-              "model": {
-                "type": "string"
-              },
-              "eval_duration": {
-                "type": "integer"
-              }
+          "model": {
+            "type": "string",
+            "description": "Model used for generation"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "done": {
+            "type": "boolean"
+          },
+          "context": {
+            "type": "array",
+            "items": {
+              "type": "integer"
             }
+          },
+          "total_duration": {
+            "type": "integer",
+            "description": "Total processing time in milliseconds"
           }
         }
       },
       "ChatRequest": {
         "type": "object",
-        "required": ["model", "messages"],
+        "required": ["messages", "model"],
         "properties": {
-          "model": {
-            "type": "string"
-          },
           "messages": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ChatMessage"
+              "type": "object",
+              "required": ["role", "content"],
+              "properties": {
+                "role": {
+                  "type": "string",
+                  "enum": ["system", "user", "assistant"]
+                },
+                "content": {
+                  "type": "string"
+                }
+              }
             }
-          }
-        }
-      },
-      "ChatMessage": {
-        "type": "object",
-        "required": ["role", "content"],
-        "properties": {
-          "role": {
-            "type": "string",
-            "enum": ["system", "user", "assistant"]
           },
-          "content": {
-            "type": "string"
+          "model": {
+            "type": "string",
+            "description": "The Ollama model to use",
+            "default": "healthcare-llm:latest"
+          },
+          "options": {
+            "type": "object",
+            "properties": {
+              "temperature": {
+                "type": "number",
+                "default": 0.7
+              },
+              "max_tokens": {
+                "type": "integer",
+                "default": 2048
+              }
+            }
           }
         }
       },
@@ -443,33 +478,76 @@
         "type": "object",
         "properties": {
           "message": {
-            "$ref": "#/components/schemas/ChatMessage"
-          },
-          "metadata": {
             "type": "object",
             "properties": {
-              "model": {
-                "type": "string"
+              "role": {
+                "type": "string",
+                "enum": ["assistant"]
               },
-              "eval_duration": {
-                "type": "integer"
+              "content": {
+                "type": "string"
               }
             }
+          },
+          "model": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "done": {
+            "type": "boolean"
+          },
+          "total_duration": {
+            "type": "integer",
+            "description": "Total processing time in milliseconds"
           }
         }
       },
-      "GenerationOptions": {
+      "CustomGPTRequest": {
+        "type": "object",
+        "required": ["input", "capabilities"],
+        "properties": {
+          "input": {
+            "type": "string",
+            "description": "User input to process"
+          },
+          "capabilities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of capabilities to use"
+          },
+          "context": {
+            "type": "object",
+            "description": "Additional context for processing"
+          }
+        }
+      },
+      "CustomGPTResponse": {
         "type": "object",
         "properties": {
-          "temperature": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 2
+          "response": {
+            "type": "string",
+            "description": "Generated response"
           },
-          "top_p": {
+          "capabilities_used": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "confidence": {
             "type": "number",
+            "description": "Confidence score of the response",
             "minimum": 0,
             "maximum": 1
+          },
+          "processing_time": {
+            "type": "number",
+            "description": "Time taken to process in seconds"
           }
         }
       },
@@ -516,50 +594,43 @@
           }
         }
       },
-      "CustomGPTRequest": {
+      "GenerationOptions": {
         "type": "object",
-        "required": ["query"],
         "properties": {
-          "query": {
-            "type": "string",
-            "description": "User query or command"
+          "temperature": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 2
           },
-          "context": {
-            "type": "object",
-            "description": "Additional context"
-          },
-          "patient_data": {
-            "type": "object",
-            "description": "Patient-specific data"
-          },
-          "model_name": {
-            "type": "string",
-            "description": "Ollama model name",
-            "default": "phi_lora_3b_medical_healthcaremagic_gguf"
+          "top_p": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
           }
         }
       },
-      "CustomGPTResponse": {
+      "ChatMessage": {
         "type": "object",
+        "required": ["role", "content"],
         "properties": {
-          "response": {
+          "role": {
             "type": "string",
-            "description": "Generated response"
+            "enum": ["system", "user", "assistant"]
           },
-          "recommendations": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "description": "Medical recommendations"
+          "content": {
+            "type": "string"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": {
+            "type": "string"
           },
-          "vital_signs": {
-            "type": "object",
-            "description": "Updated vital signs"
-          },
-          "metadata": {
-            "type": "object",
-            "description": "Response metadata"
+          "message": {
+            "type": "string"
           }
         }
       }
@@ -582,20 +653,6 @@
             "schema": {
               "$ref": "#/components/schemas/Error"
             }
-          }
-        }
-      }
-    },
-    "schemas": {
-      "Error": {
-        "type": "object",
-        "required": ["code", "message"],
-        "properties": {
-          "code": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
           }
         }
       }
