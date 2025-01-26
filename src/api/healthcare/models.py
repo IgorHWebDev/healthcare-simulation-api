@@ -43,9 +43,24 @@ class PatientData(BaseModel):
     gender: Optional[str] = Field(None, pattern="^(male|female|other)$")
     vital_signs: Optional[VitalSigns] = None
 
+class Action(BaseModel):
+    """Model for simulation action."""
+    action: str = Field(..., description="Action to be taken")
+    details: str = Field(..., description="Detailed description of the action")
+    references: Optional[List[str]] = Field(default_factory=list, description="Reference materials")
+
+class Step(BaseModel):
+    """Model for simulation step."""
+    step: int = Field(..., description="Step number")
+    description: str = Field(..., description="Step description")
+    actions: List[Action] = Field(..., description="Actions to be taken")
+
 class SimulationRequest(BaseModel):
     """Model for simulation request."""
     scenario: str = Field(..., description="Healthcare scenario to simulate")
+    title: str = Field(..., description="Title of the simulation scenario")
+    actors: List[str] = Field(..., description="List of actors involved in the scenario")
+    steps: List[Step] = Field(..., description="List of steps in the scenario")
     patient_data: Optional[PatientData] = None
 
 class SimulationResponse(BaseModel):
@@ -59,7 +74,9 @@ class SimulationResponse(BaseModel):
 class ValidationRequest(BaseModel):
     """Model for validation request."""
     protocol: str = Field(..., description="Healthcare protocol to validate")
+    protocol_type: str = Field(..., description="Type of protocol (e.g., ACLS, BLS)")
     steps: List[str] = Field(..., description="Steps in the protocol")
+    actions: List[str] = Field(..., description="Actions to be taken")
 
 class ValidationResponse(BaseModel):
     """Model for validation response."""

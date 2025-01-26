@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Complete Healthcare System Architecture</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .navigation {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 250px;
+            height: 100%;
+            background: white;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            overflow-y: auto;
+        }
+        .navigation a {
+            display: block;
+            padding: 8px;
+            color: #333;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+        .navigation a:hover {
+            background: #f0f0f0;
+        }
+        .navigation a.active {
+            background: #007bff;
+            color: white;
+        }
+        .main-content {
+            margin-left: 270px;
+            padding: 20px;
+        }
+        .controls {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            padding: 8px 16px;
+            margin: 0 5px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .diagram-container {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        .section-title {
+            position: sticky;
+            top: 60px;
+            background: white;
+            padding: 10px;
+            margin: -20px -20px 20px -20px;
+            border-bottom: 1px solid #eee;
+            font-size: 1.5em;
+            z-index: 99;
+        }
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 250px;
+            right: 0;
+            height: 3px;
+            background: #007bff;
+            transform-origin: 0 50%;
+            transition: transform 0.2s;
+        }
+        .search-box {
+            padding: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="navigation">
+        <input type="text" class="search-box" placeholder="Search sections..." onkeyup="filterSections(this.value)">
+        <div id="nav-links"></div>
+    </div>
+
+    <div class="progress-bar" id="progress-bar"></div>
+
+    <div class="main-content">
+        <div class="controls">
+            <button onclick="resetView()">Reset View</button>
+            <button onclick="zoomIn()">Zoom In</button>
+            <button onclick="zoomOut()">Zoom Out</button>
+            <button onclick="prevSection()">Previous Section</button>
+            <button onclick="nextSection()">Next Section</button>
+            <span id="zoom-level"></span>
+        </div>
+
+        <div id="sections">
+            <!-- Sections will be dynamically populated -->
+        </div>
+    </div>
+
+    <script>
+        // Initialize Mermaid
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            securityLevel: 'loose',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+
+        const sections = [
+            "Complete System Overview",
+            "Hybrid Agile-Waterfall Flow",
+            "Current System Architecture",
+            "Agent System Architecture",
+            "Quantum-Resistant Security",
+            "Data Flow Architecture",
+            "Development Guidelines",
+            "Environment Configuration",
+            "NFT Integration",
+            "AutoGen Configuration",
+            "Zeta-Second Development Flow",
+            "Development Steps",
+            "Integrated Code Workflow",
+            "Implementation Integration",
+            "Code Integration Example",
+            "Docker Configuration",
+            "CI/CD Pipeline",
+            "Quantum Algorithm Integration",
+            "Development Flow Diagram",
+            "Database Interchangeability",
+            "API Gateway Architecture",
+            "Security Layer Implementation",
+            "Healthcare Data Models",
+            "Blockchain Integration",
+            "Performance Monitoring",
+            "Testing Framework",
+            "User Interface Flow",
+            "Machine Learning Pipeline",
+            "Compliance Framework",
+            "Error Handling",
+            "Logging System",
+            "Backup Strategy",
+            "Deployment Architecture",
+            "Scaling Strategy",
+            "Maintenance Workflow",
+            "Documentation System",
+            "Training Pipeline"
+        ];
+
+        let currentSection = 0;
+        let scale = 1;
+        let translateX = 0;
+        let translateY = 0;
+
+        // Populate navigation and sections
+        function initializePage() {
+            const navLinks = document.getElementById('nav-links');
+            const sectionsContainer = document.getElementById('sections');
+            
+            sections.forEach((section, index) => {
+                // Add navigation link
+                const link = document.createElement('a');
+                link.href = `#section-${index}`;
+                link.textContent = `${index + 1}. ${section}`;
+                link.onclick = (e) => {
+                    e.preventDefault();
+                    navigateToSection(index);
+                };
+                navLinks.appendChild(link);
+
+                // Add section container
+                const sectionDiv = document.createElement('div');
+                sectionDiv.id = `section-${index}`;
+                sectionDiv.className = 'diagram-container';
+                sectionDiv.innerHTML = `
+                    <div class="section-title">${index + 1}. ${section}</div>
+                    <div class="mermaid">
+                        <!-- Diagram content will be added dynamically -->
+                    </div>
+                `;
+                sectionsContainer.appendChild(sectionDiv);
+            });
+
+            updateActiveSection();
+            setupScrollListener();
+        }
+
+        function navigateToSection(index) {
+            currentSection = index;
+            document.getElementById(`section-${index}`).scrollIntoView({ behavior: 'smooth' });
+            updateActiveSection();
+        }
+
+        function nextSection() {
+            if (currentSection < sections.length - 1) {
+                navigateToSection(currentSection + 1);
+            }
+        }
+
+        function prevSection() {
+            if (currentSection > 0) {
+                navigateToSection(currentSection - 1);
+            }
+        }
+
+        function updateActiveSection() {
+            document.querySelectorAll('.navigation a').forEach((link, index) => {
+                link.classList.toggle('active', index === currentSection);
+            });
+            updateProgressBar();
+        }
+
+        function updateProgressBar() {
+            const progress = (currentSection + 1) / sections.length;
+            document.getElementById('progress-bar').style.transform = `scaleX(${progress})`;
+        }
+
+        function setupScrollListener() {
+            window.addEventListener('scroll', () => {
+                const containers = document.querySelectorAll('.diagram-container');
+                let newSection = currentSection;
+
+                containers.forEach((container, index) => {
+                    const rect = container.getBoundingClientRect();
+                    if (rect.top <= 100 && rect.bottom >= 100) {
+                        newSection = index;
+                    }
+                });
+
+                if (newSection !== currentSection) {
+                    currentSection = newSection;
+                    updateActiveSection();
+                }
+            });
+        }
+
+        function filterSections(query) {
+            const links = document.querySelectorAll('.navigation a');
+            query = query.toLowerCase();
+
+            links.forEach((link, index) => {
+                const text = link.textContent.toLowerCase();
+                link.style.display = text.includes(query) ? 'block' : 'none';
+            });
+        }
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', initializePage);
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                nextSection();
+            } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                prevSection();
+            }
+        });
+    </script>
+</body>
+</html>

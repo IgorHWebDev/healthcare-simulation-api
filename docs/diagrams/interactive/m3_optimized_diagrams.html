@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>M3-Optimized Healthcare System Architecture</title>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: { curve: 'basis' },
+            securityLevel: 'loose',
+            fontFamily: 'system-ui'
+        });
+    </script>
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --bg-color: #f8f9fa;
+            --text-color: #333;
+            --border-color: #dee2e6;
+        }
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: var(--bg-color);
+            color: var(--text-color);
+        }
+        .layout {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            min-height: 100vh;
+        }
+        .sidebar {
+            background: white;
+            padding: 20px;
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            position: fixed;
+            width: 250px;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+        }
+        .controls {
+            position: sticky;
+            top: 0;
+            background: white;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 100;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .diagram-container {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        .button {
+            padding: 8px 16px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+        .nav-link {
+            display: block;
+            padding: 8px 12px;
+            color: var(--text-color);
+            text-decoration: none;
+            border-radius: 6px;
+            margin: 2px 0;
+            transition: background 0.2s;
+        }
+        .nav-link:hover {
+            background: var(--bg-color);
+        }
+        .nav-link.active {
+            background: var(--primary-color);
+            color: white;
+        }
+        .search-box {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+        .section-title {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            color: var(--text-color);
+        }
+        .diagram-wrapper {
+            overflow: hidden;
+            border-radius: 6px;
+        }
+        .mermaid {
+            transition: transform 0.3s ease;
+        }
+        .performance-stats {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.9);
+            padding: 10px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            font-size: 12px;
+        }
+        .zoom-controls {
+            position: absolute;
+            right: 20px;
+            bottom: 20px;
+            display: flex;
+            gap: 5px;
+        }
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="theme-toggle">
+        <button class="button" onclick="toggleTheme()">Toggle Theme</button>
+    </div>
+    
+    <div class="layout">
+        <nav class="sidebar">
+            <input type="text" class="search-box" placeholder="Search sections..." onkeyup="filterSections(this.value)">
+            <div id="nav-links"></div>
+        </nav>
+
+        <main class="main-content">
+            <div class="controls">
+                <button class="button" onclick="prevSection()">Previous</button>
+                <button class="button" onclick="nextSection()">Next</button>
+                <button class="button" onclick="resetView()">Reset View</button>
+                <button class="button" onclick="zoomIn()">Zoom In</button>
+                <button class="button" onclick="zoomOut()">Zoom Out</button>
+                <span id="section-info"></span>
+            </div>
+
+            <div id="diagram-sections"></div>
+
+            <div class="performance-stats">
+                <div>M3 GPU Usage: <span id="gpu-usage">0%</span></div>
+                <div>Memory Usage: <span id="memory-usage">0 MB</span></div>
+                <div>FPS: <span id="fps">60</span></div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Diagram definitions
+        const sections = [
+            {
+                title: "1. M3-Optimized System Overview",
+                diagram: `
+                graph TB
+                    subgraph M3["M3 Optimization Layer"]
+                        Metal["Metal Framework"]
+                        SIMD["SIMD Operations"]
+                        ANE["Neural Engine"]
+                    end
+
+                    subgraph Core["Core System"]
+                        API["API Gateway"]
+                        Auth["Authentication"]
+                        Services["Healthcare Services"]
+                    end
+
+                    subgraph AI["AI Components"]
+                        Ollama["Ollama Integration"]
+                        Models["Healthcare Models"]
+                        Training["M3 Training Pipeline"]
+                    end
+
+                    M3 --> Core
+                    Core --> AI
+                    
+                    classDef m3 fill:#f9f,stroke:#333,stroke-width:2px
+                    classDef core fill:#bbf,stroke:#333,stroke-width:2px
+                    classDef ai fill:#bfb,stroke:#333,stroke-width:2px
+
+                    class Metal,SIMD,ANE m3
+                    class API,Auth,Services core
+                    class Ollama,Models,Training ai
+                `
+            },
+            {
+                title: "2. Database Architecture",
+                diagram: `
+                graph TB
+                    subgraph API["API Layer"]
+                        Interface["Database Interface"]
+                        Models["Healthcare Models"]
+                        Validation["Data Validation"]
+                    end
+
+                    subgraph DB["Database Layer"]
+                        PostgreSQL["PostgreSQL"]
+                        MongoDB["MongoDB"]
+                        TimescaleDB["TimescaleDB"]
+                    end
+
+                    Interface --> Models
+                    Models --> Validation
+                    Interface --> PostgreSQL
+                    Interface --> MongoDB
+                    Interface --> TimescaleDB
+
+                    classDef api fill:#f9f,stroke:#333,stroke-width:2px
+                    classDef db fill:#bfb,stroke:#333,stroke-width:2px
+
+                    class Interface,Models,Validation api
+                    class PostgreSQL,MongoDB,TimescaleDB db
+                `
+            }
+            // Add more sections here
+        ];
+
+        let currentSection = 0;
+        let scale = 1;
+        let translateX = 0;
+        let translateY = 0;
+
+        // Initialize the page
+        function initializePage() {
+            const navLinks = document.getElementById('nav-links');
+            const diagramSections = document.getElementById('diagram-sections');
+
+            sections.forEach((section, index) => {
+                // Create navigation link
+                const link = document.createElement('a');
+                link.href = `#section-${index}`;
+                link.className = 'nav-link';
+                link.textContent = section.title;
+                link.onclick = (e) => {
+                    e.preventDefault();
+                    navigateToSection(index);
+                };
+                navLinks.appendChild(link);
+
+                // Create diagram container
+                const container = document.createElement('div');
+                container.className = 'diagram-container';
+                container.innerHTML = `
+                    <h2 class="section-title">${section.title}</h2>
+                    <div class="diagram-wrapper">
+                        <div class="mermaid">${section.diagram}</div>
+                    </div>
+                    <div class="zoom-controls">
+                        <button class="button" onclick="zoomIn()">+</button>
+                        <button class="button" onclick="zoomOut()">-</button>
+                    </div>
+                `;
+                diagramSections.appendChild(container);
+            });
+
+            updateUI();
+            setupInteractions();
+            simulatePerformance();
+        }
+
+        function navigateToSection(index) {
+            currentSection = index;
+            document.querySelectorAll('.nav-link').forEach((link, i) => {
+                link.classList.toggle('active', i === index);
+            });
+            document.querySelectorAll('.diagram-container')[index].scrollIntoView({ behavior: 'smooth' });
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('section-info').textContent = 
+                `Section ${currentSection + 1} of ${sections.length}`;
+        }
+
+        function setupInteractions() {
+            document.querySelectorAll('.diagram-wrapper').forEach(wrapper => {
+                let isDragging = false;
+                let startX, startY;
+
+                wrapper.addEventListener('mousedown', (e) => {
+                    isDragging = true;
+                    startX = e.clientX - translateX;
+                    startY = e.clientY - translateY;
+                });
+
+                document.addEventListener('mousemove', (e) => {
+                    if (!isDragging) return;
+                    translateX = e.clientX - startX;
+                    translateY = e.clientY - startY;
+                    updateTransform(wrapper);
+                });
+
+                document.addEventListener('mouseup', () => {
+                    isDragging = false;
+                });
+
+                wrapper.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+                    scale = Math.max(0.5, Math.min(2, scale + delta));
+                    updateTransform(wrapper);
+                });
+            });
+        }
+
+        function updateTransform(wrapper) {
+            const diagram = wrapper.querySelector('.mermaid');
+            if (diagram) {
+                diagram.style.transform = `scale(${scale}) translate(${translateX}px, ${translateY}px)`;
+            }
+        }
+
+        function simulatePerformance() {
+            setInterval(() => {
+                document.getElementById('gpu-usage').textContent = 
+                    `${Math.round(Math.random() * 30 + 10)}%`;
+                document.getElementById('memory-usage').textContent = 
+                    `${Math.round(Math.random() * 500 + 200)} MB`;
+                document.getElementById('fps').textContent = 
+                    Math.round(Math.random() * 10 + 55);
+            }, 1000);
+        }
+
+        // Navigation functions
+        function nextSection() {
+            if (currentSection < sections.length - 1) {
+                navigateToSection(currentSection + 1);
+            }
+        }
+
+        function prevSection() {
+            if (currentSection > 0) {
+                navigateToSection(currentSection - 1);
+            }
+        }
+
+        function resetView() {
+            scale = 1;
+            translateX = 0;
+            translateY = 0;
+            document.querySelectorAll('.diagram-wrapper').forEach(updateTransform);
+        }
+
+        function zoomIn() {
+            scale = Math.min(2, scale + 0.1);
+            document.querySelectorAll('.diagram-wrapper').forEach(updateTransform);
+        }
+
+        function zoomOut() {
+            scale = Math.max(0.5, scale - 0.1);
+            document.querySelectorAll('.diagram-wrapper').forEach(updateTransform);
+        }
+
+        function filterSections(query) {
+            query = query.toLowerCase();
+            document.querySelectorAll('.nav-link').forEach(link => {
+                const matches = link.textContent.toLowerCase().includes(query);
+                link.style.display = matches ? 'block' : 'none';
+            });
+        }
+
+        let isDarkTheme = false;
+        function toggleTheme() {
+            isDarkTheme = !isDarkTheme;
+            document.body.classList.toggle('dark-theme');
+            if (isDarkTheme) {
+                document.documentElement.style.setProperty('--bg-color', '#1a1a1a');
+                document.documentElement.style.setProperty('--text-color', '#ffffff');
+                document.documentElement.style.setProperty('--border-color', '#333');
+            } else {
+                document.documentElement.style.setProperty('--bg-color', '#f8f9fa');
+                document.documentElement.style.setProperty('--text-color', '#333');
+                document.documentElement.style.setProperty('--border-color', '#dee2e6');
+            }
+        }
+
+        // Initialize when document is ready
+        document.addEventListener('DOMContentLoaded', initializePage);
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            switch(e.key) {
+                case 'ArrowRight':
+                    nextSection();
+                    break;
+                case 'ArrowLeft':
+                    prevSection();
+                    break;
+                case '0':
+                    resetView();
+                    break;
+            }
+        });
+    </script>
+</body>
+</html>

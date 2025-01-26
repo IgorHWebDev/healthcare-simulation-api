@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Integrated Quantum-Resistant Healthcare Information System</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1, h2, h3, h4 {
+            color: #333;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-top: 40px;
+        }
+        h1 {
+            margin-top: 0;
+        }
+        .diagram-container {
+            background-color: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .description {
+            color: #666;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+        .code-block {
+            background-color: #e8e8e8;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+        ul, ol {
+            margin-left: 20px;
+        }
+        li {
+            margin: 5px 0;
+        }
+        pre {
+            background-color: #e8e8e8;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 90%;
+            overflow-x: auto;
+        }
+        .mermaid {
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+        }
+        .status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+        .completed {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+        .in-progress {
+            background-color: #fcf8e3;
+            color: #8a6d3b;
+        }
+        .planned {
+            background-color: #f2dede;
+            color: #a94442;
+        }
+    </style>
+</head>
+<body>
+    <h1>Integrated Quantum-Resistant Healthcare Information System</h1>
+    <div class="description">
+        A comprehensive, quantum-resistant system built on M3-optimized architecture,
+        integrating multiple specialized agents for healthcare, research, and blockchain operations,
+        following a Hybrid Agile–Waterfall approach.
+    </div>
+
+    <div class="diagram-container">
+        <h2>1. Overall Hybrid Agile–Waterfall System Flow</h2>
+        <div class="description">
+            Illustrates how the Waterfall phases combine with Agile sprints for a balanced approach in healthcare software compliance.
+        </div>
+        <div class="mermaid">
+        flowchart TB
+            subgraph Waterfall["Waterfall Phases"]
+                direction TB
+                P["1. Planning & Requirements"] --> A["2. Architecture & Design"]
+                A --> V["4. Verification & Validation"]
+                V --> D["5. Deployment & Release"]
+                D --> M["6. Maintenance & Evolution"]
+            end
+
+            subgraph Agile["3. Iterative Development (Agile Sprints)"]
+                direction TB
+                SP["Sprint Planning"] --> SE["Sprint Execution"]
+                SE --> SR["Sprint Review"]
+                SR --> SR2["Sprint Retrospective"]
+                SR2 --> SP
+            end
+
+            P --> Agile
+            Agile --> V
+
+            classDef waterfall fill:#f9f,stroke:#333,stroke-width:2px
+            classDef agile fill:#bfb,stroke:#333,stroke-width:2px
+
+            class P,A,V,D,M waterfall
+            class SP,SE,SR,SR2 agile
+        </div>
+    </div>
+
+    <div class="diagram-container">
+        <h2>2. Current System Architecture</h2>
+        <div class="description">
+            Core system components and their implementation status.
+        </div>
+        <div class="mermaid">
+        flowchart TB
+            subgraph Frontend["Frontend Layer"]
+                UI["User Interface"] --> API["API Gateway (✅)"]
+                API --> Auth["Authentication (✅)"]
+            end
+
+            subgraph Core["Core Processing"]
+                Auth --> HC["Healthcare Operations (⏳)"]
+                HC --> LLM["LLM Integration (⏳)"]
+                HC --> Val["Validation Engine (✅)"]
+                
+                subgraph M3["M3 Optimization (✅)"]
+                    LLM --> MOpt["Metal Framework"]
+                    MOpt --> GPU["GPU Acceleration"]
+                    MOpt --> ML["ML Operations"]
+                end
+            end
+
+            subgraph Healthcare["Healthcare Engine"]
+                HC --> Sim["Simulation Engine (⏳)"]
+                Sim --> VS["Vital Signs (✅)"]
+                Sim --> CR["Clinical Recommendations (⏳)"]
+                Sim --> Risk["Risk Assessment (⏳)"]
+            end
+
+            subgraph Security["Security Layer"]
+                Auth --> Enc["Encryption (✅)"]
+                Auth --> Log["Audit Logging (⏳)"]
+                HC --> Val
+            end
+
+            Frontend --> Core
+            Core --> Healthcare
+            Core --> Security
+
+            classDef default fill:#fff,stroke:#333,stroke-width:1px
+            classDef completed fill:#dff0d8,stroke:#3c763d,stroke-width:2px
+            classDef inProgress fill:#fcf8e3,stroke:#8a6d3b,stroke-width:2px
+
+            class API,Auth,Val,M3,VS,Enc completed
+            class HC,LLM,Sim,CR,Risk,Log inProgress
+        </div>
+    </div>
+
+    <div class="diagram-container">
+        <h2>3. LLM Integration Flow</h2>
+        <div class="description">
+            Enhanced LLM integration with improved JSON handling and M3 optimization.
+        </div>
+        <div class="mermaid">
+        sequenceDiagram
+            participant C as Client
+            participant A as API Gateway
+            participant H as Healthcare Engine
+            participant L as LLM Service
+            participant V as Validator
+            
+            C->>A: Healthcare Request
+            A->>H: Validate & Process
+            
+            H->>L: Check LLM Health
+            alt LLM Available
+                L-->>H: Service Ready
+                H->>L: Send Query
+                L-->>H: Raw Response
+                H->>V: Validate JSON
+                alt Valid JSON
+                    V-->>H: Validated Response
+                else Invalid JSON
+                    V->>V: Apply Auto-completion
+                    V-->>H: Completed Response
+                end
+            else LLM Unavailable
+                L-->>H: Service Error
+                H->>H: Use Fallback Logic
+            end
+            
+            H-->>A: Final Response
+            A-->>C: Healthcare Results
+        </div>
+    </div>
+
+    <div class="diagram-container">
+        <h2>4. M3 Optimization Architecture</h2>
+        <div class="description">
+            Metal framework integration and hardware acceleration for M3 silicon.
+        </div>
+        <div class="mermaid">
+        flowchart TB
+            subgraph M3["M3 Silicon Optimization"]
+                Metal["Metal Framework"] --> Accel["Hardware Acceleration"]
+                Accel --> MLOps["ML Operations"]
+                Accel --> ImgProc["Image Processing"]
+                
+                subgraph Memory["Memory Management"]
+                    Cache["Smart Caching"]
+                    Pool["Memory Pooling"]
+                    Alloc["Efficient Allocation"]
+                end
+                
+                MLOps --> Memory
+                ImgProc --> Memory
+            end
+
+            classDef m3 fill:#f9f,stroke:#333,stroke-width:2px
+            class M3,Metal,Accel,MLOps,ImgProc,Memory m3
+        </div>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            securityLevel: 'loose',
+            themeVariables: {
+                fontFamily: 'arial'
+            }
+        });
+    </script>
+</body>
+</html>

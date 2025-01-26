@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Interactive Healthcare System Diagrams</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .diagram-container {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        .controls {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: white;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 8px 16px;
+            margin: 0 5px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .mermaid {
+            transition: transform 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <button onclick="resetView()">Reset View</button>
+        <button onclick="zoomIn()">Zoom In</button>
+        <button onclick="zoomOut()">Zoom Out</button>
+        <span id="zoom-level"></span>
+    </div>
+
+    <div class="diagram-container">
+        <h2>Database Interchangeability Framework</h2>
+        <div class="mermaid">
+        graph TB
+            subgraph API["API Layer"]
+                Interface["Database Interface"]
+                Models["Healthcare Data Models"]
+                Validation["Data Validation"]
+            end
+
+            subgraph Adapters["Database Adapters"]
+                PostgreSQL["PostgreSQL Adapter"]
+                MongoDB["MongoDB Adapter"]
+                TimescaleDB["TimescaleDB Adapter"]
+                ClickHouse["ClickHouse Adapter"]
+            end
+
+            subgraph Features["Core Features"]
+                Migration["Schema Migration"]
+                Versioning["Data Versioning"]
+                Backup["Automated Backup"]
+                Audit["Audit Logging"]
+            end
+
+            Interface --> Models
+            Models --> Validation
+            
+            Interface --> PostgreSQL
+            Interface --> MongoDB
+            Interface --> TimescaleDB
+            Interface --> ClickHouse
+            
+            PostgreSQL --> Features
+            MongoDB --> Features
+            TimescaleDB --> Features
+            ClickHouse --> Features
+
+            classDef api fill:#f9f,stroke:#333,stroke-width:2px;
+            classDef adapters fill:#bfb,stroke:#333,stroke-width:2px;
+            classDef features fill:#bbf,stroke:#333,stroke-width:2px;
+
+            class Interface,Models,Validation api;
+            class PostgreSQL,MongoDB,TimescaleDB,ClickHouse adapters;
+            class Migration,Versioning,Backup,Audit features;
+        </div>
+    </div>
+
+    <script>
+        // Initialize Mermaid
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            securityLevel: 'loose',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+
+        // Variables for zoom and pan
+        let scale = 1;
+        let translateX = 0;
+        let translateY = 0;
+        let isDragging = false;
+        let startX, startY;
+
+        // Update zoom level display
+        function updateZoomDisplay() {
+            document.getElementById('zoom-level').textContent = `Zoom: ${Math.round(scale * 100)}%`;
+        }
+
+        // Zoom functions
+        function zoomIn() {
+            scale = Math.min(2, scale + 0.1);
+            updateTransform();
+        }
+
+        function zoomOut() {
+            scale = Math.max(0.5, scale - 0.1);
+            updateTransform();
+        }
+
+        function resetView() {
+            scale = 1;
+            translateX = 0;
+            translateY = 0;
+            updateTransform();
+        }
+
+        function updateTransform() {
+            const diagrams = document.querySelectorAll('.mermaid');
+            diagrams.forEach(diagram => {
+                const svg = diagram.querySelector('svg');
+                if (svg) {
+                    svg.style.transform = `scale(${scale}) translate(${translateX}px, ${translateY}px)`;
+                }
+            });
+            updateZoomDisplay();
+        }
+
+        // Add event listeners after Mermaid renders
+        document.addEventListener('DOMContentLoaded', () => {
+            // Wait for Mermaid to render
+            setTimeout(() => {
+                const containers = document.querySelectorAll('.diagram-container');
+                containers.forEach(container => {
+                    const svg = container.querySelector('svg');
+                    if (!svg) return;
+
+                    // Add pan functionality
+                    svg.addEventListener('mousedown', (e) => {
+                        isDragging = true;
+                        startX = e.clientX - translateX;
+                        startY = e.clientY - translateY;
+                        svg.style.cursor = 'grabbing';
+                    });
+
+                    svg.addEventListener('mousemove', (e) => {
+                        if (!isDragging) return;
+                        translateX = e.clientX - startX;
+                        translateY = e.clientY - startY;
+                        updateTransform();
+                    });
+
+                    svg.addEventListener('mouseup', () => {
+                        isDragging = false;
+                        svg.style.cursor = 'grab';
+                    });
+
+                    svg.addEventListener('mouseleave', () => {
+                        isDragging = false;
+                        svg.style.cursor = 'grab';
+                    });
+
+                    // Add zoom on wheel
+                    svg.addEventListener('wheel', (e) => {
+                        e.preventDefault();
+                        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+                        scale = Math.max(0.5, Math.min(2, scale + delta));
+                        updateTransform();
+                    });
+
+                    // Make nodes interactive
+                    const nodes = svg.querySelectorAll('.node');
+                    nodes.forEach(node => {
+                        node.style.cursor = 'pointer';
+                        node.addEventListener('click', () => {
+                            // Reset all nodes and edges
+                            svg.querySelectorAll('.edge').forEach(e => e.style.opacity = '0.2');
+                            nodes.forEach(n => n.style.opacity = '0.2');
+                            
+                            // Highlight clicked node
+                            node.style.opacity = '1';
+                            const connectedEdges = svg.querySelectorAll(`.edge[id*="${node.id}"]`);
+                            connectedEdges.forEach(edge => {
+                                edge.style.opacity = '1';
+                                const [source, target] = edge.id.split('-');
+                                document.getElementById(source).style.opacity = '1';
+                                document.getElementById(target).style.opacity = '1';
+                            });
+                        });
+                    });
+
+                    // Initialize cursor style
+                    svg.style.cursor = 'grab';
+                });
+
+                updateZoomDisplay();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+None of the provided servers is under the root origin https://localhost
+Server URL http://localhost:11434 is not under the root origin https://localhost; ignoring it
+Server URL http://localhost:8000 is not under the root origin https://localhost; ignoring it
+Server URL https://healthcare-simulation-api.onrender.com is not under the root origin https://localhost; ignoring it
+Found multiple hostnames, dropping http://localhost:8000
+Found multiple hostnames, dropping https://healthcare-simulation-api.onrender.com

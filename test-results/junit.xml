@@ -1,1 +1,18 @@
-<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="0" skipped="0" tests="3" time="0.465" timestamp="2025-01-25T22:42:24.714604" hostname="Dianas-MacBook-Pro.local"><testcase classname="tests.test_patient_simulation" name="test_complete_patient_simulation" time="0.067" /><testcase classname="tests.test_patient_simulation" name="test_patient_simulation_with_complications" time="0.026" /><testcase classname="tests.test_patient_simulation" name="test_patient_simulation_with_treatment_response" time="0.025" /></testsuite></testsuites>
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="5" skipped="0" tests="6" time="0.962" timestamp="2025-01-26T22:37:19.245972" hostname="Dianas-MacBook-Pro.local"><testcase classname="src.tests.test_render_api" name="test_create_patient" time="0.008"><failure message="assert 401 == 201&#10; +  where 401 = &lt;Response [401 Unauthorized]&gt;.status_code">src/tests/test_render_api.py:81: in test_create_patient
+    assert response.status_code == 201
+E   assert 401 == 201
+E    +  where 401 = &lt;Response [401 Unauthorized]&gt;.status_code</failure></testcase><testcase classname="src.tests.test_render_api" name="test_analyze_patient_scenario" time="0.002"><failure message="assert 401 == 201&#10; +  where 401 = &lt;Response [401 Unauthorized]&gt;.status_code">src/tests/test_render_api.py:90: in test_analyze_patient_scenario
+    patient_id = test_create_patient(test_patient_data)
+src/tests/test_render_api.py:81: in test_create_patient
+    assert response.status_code == 201
+E   assert 401 == 201
+E    +  where 401 = &lt;Response [401 Unauthorized]&gt;.status_code</failure></testcase><testcase classname="src.tests.test_render_api" name="test_simulate_scenario" time="0.002"><failure message="assert 401 == 200&#10; +  where 401 = &lt;Response [401 Unauthorized]&gt;.status_code">src/tests/test_render_api.py:110: in test_simulate_scenario
+    assert response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401 Unauthorized]&gt;.status_code</failure></testcase><testcase classname="src.tests.test_render_api" name="test_validate_protocol" time="0.002"><failure message="assert 401 == 200&#10; +  where 401 = &lt;Response [401 Unauthorized]&gt;.status_code">src/tests/test_render_api.py:145: in test_validate_protocol
+    assert response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401 Unauthorized]&gt;.status_code</failure></testcase><testcase classname="src.tests.test_render_api" name="test_error_handling" time="0.004"><failure message="assert 401 == 422&#10; +  where 401 = &lt;Response [401 Unauthorized]&gt;.status_code">src/tests/test_render_api.py:175: in test_error_handling
+    assert response.status_code == 422
+E   assert 401 == 422
+E    +  where 401 = &lt;Response [401 Unauthorized]&gt;.status_code</failure></testcase><testcase classname="src.tests.test_render_api" name="test_performance_metrics" time="0.001" /></testsuite></testsuites>

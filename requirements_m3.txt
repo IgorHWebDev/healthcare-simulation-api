@@ -1,0 +1,11 @@
+# M3-specific requirements for Ollama integration
+psutil>=5.9.0  # System resource monitoring
+gputil>=1.4.0  # GPU monitoring
+py-cpuinfo>=9.0.0  # CPU information
+pyobjc-framework-Metal>=9.2  # Metal framework support for M3
+pyobjc-framework-Cocoa>=9.2  # Required for Metal framework
+httpx>=0.24.0  # Async HTTP client
+fastapi>=0.100.0  # FastAPI framework
+pydantic>=2.0.0  # Data validation
+python-dotenv>=1.0.0  # Environment management
+uvicorn>=0.23.0  # ASGI server

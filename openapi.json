@@ -32,7 +32,110 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SimulationRequest"
+                "type": "object",
+                "required": ["scenario", "title", "actors", "steps"],
+                "properties": {
+                  "scenario": {
+                    "type": "string",
+                    "description": "Healthcare scenario to simulate",
+                    "example": "A patient is experiencing chest pain with difficulty breathing"
+                  },
+                  "title": {
+                    "type": "string",
+                    "description": "Title of the simulation scenario",
+                    "example": "Chest Pain with Respiratory Distress"
+                  },
+                  "actors": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "List of actors involved in the scenario",
+                    "example": ["Paramedic", "Patient", "EMT"]
+                  },
+                  "steps": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["step", "description", "actions"],
+                      "properties": {
+                        "step": {
+                          "type": "integer",
+                          "description": "Step number"
+                        },
+                        "description": {
+                          "type": "string",
+                          "description": "Step description"
+                        },
+                        "actions": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": ["action", "details"],
+                            "properties": {
+                              "action": {
+                                "type": "string",
+                                "description": "Action to be taken"
+                              },
+                              "details": {
+                                "type": "string",
+                                "description": "Detailed description of the action"
+                              },
+                              "references": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                },
+                                "description": "Reference materials"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "description": "List of steps in the scenario",
+                    "example": [
+                      {
+                        "step": 1,
+                        "description": "Initial assessment",
+                        "actions": [
+                          {
+                            "action": "Check vital signs",
+                            "details": "Measure heart rate, blood pressure, respiratory rate, SpO2",
+                            "references": ["ACLS Guidelines 2020"]
+                          }
+                        ]
+                      },
+                      {
+                        "step": 2,
+                        "description": "Oxygen therapy",
+                        "actions": [
+                          {
+                            "action": "Administer oxygen",
+                            "details": "Start with nasal cannula at 2-4 L/min",
+                            "references": ["Emergency Care Protocol 2.1"]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "patient_data": {
+                    "type": "object",
+                    "properties": {
+                      "age": {
+                        "type": "integer",
+                        "description": "Patient age in years"
+                      },
+                      "gender": {
+                        "type": "string",
+                        "enum": ["male", "female", "other"]
+                      },
+                      "vital_signs": {
+                        "$ref": "#/components/schemas/VitalSigns"
+                      }
+                    }
+                  }
+                }
               }
             }
           }
@@ -308,32 +411,109 @@
       },
       "SimulationRequest": {
         "type": "object",
+        "required": ["scenario", "title", "actors", "steps"],
         "properties": {
           "scenario": {
             "type": "string",
             "description": "Healthcare scenario to simulate",
-            "example": "Patient presents with chest pain and shortness of breath"
+            "example": "A patient is experiencing chest pain with difficulty breathing"
+          },
+          "title": {
+            "type": "string",
+            "description": "Title of the simulation scenario",
+            "example": "Chest Pain with Respiratory Distress"
+          },
+          "actors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of actors involved in the scenario",
+            "example": ["Paramedic", "Patient", "EMT"]
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["step", "description", "actions"],
+              "properties": {
+                "step": {
+                  "type": "integer",
+                  "description": "Step number"
+                },
+                "description": {
+                  "type": "string",
+                  "description": "Step description"
+                },
+                "actions": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["action", "details"],
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "description": "Action to be taken"
+                      },
+                      "details": {
+                        "type": "string",
+                        "description": "Detailed description of the action"
+                      },
+                      "references": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "description": "Reference materials"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description": "List of steps in the scenario",
+            "example": [
+              {
+                "step": 1,
+                "description": "Initial assessment",
+                "actions": [
+                  {
+                    "action": "Check vital signs",
+                    "details": "Measure heart rate, blood pressure, respiratory rate, SpO2",
+                    "references": ["ACLS Guidelines 2020"]
+                  }
+                ]
+              },
+              {
+                "step": 2,
+                "description": "Oxygen therapy",
+                "actions": [
+                  {
+                    "action": "Administer oxygen",
+                    "details": "Start with nasal cannula at 2-4 L/min",
+                    "references": ["Emergency Care Protocol 2.1"]
+                  }
+                ]
+              }
+            ]
           },
           "patient_data": {
             "type": "object",
             "properties": {
               "age": {
                 "type": "integer",
-                "description": "Patient age in years",
-                "example": 65
+                "description": "Patient age in years"
               },
               "gender": {
                 "type": "string",
-                "enum": ["male", "female", "other"],
-                "example": "male"
+                "enum": ["male", "female", "other"]
               },
               "vital_signs": {
                 "$ref": "#/components/schemas/VitalSigns"
               }
             }
           }
-        },
-        "required": ["scenario"]
+        }
       },
       "SimulationResponse": {
         "type": "object",
@@ -391,11 +571,17 @@
       },
       "ValidationRequest": {
         "type": "object",
+        "required": ["protocol", "protocol_type", "steps", "actions"],
         "properties": {
           "protocol": {
             "type": "string",
             "description": "Healthcare protocol to validate",
             "example": "ACLS chest pain protocol"
+          },
+          "protocol_type": {
+            "type": "string",
+            "description": "Type of protocol (e.g., ACLS, BLS)",
+            "example": "ACLS"
           },
           "steps": {
             "type": "array",
@@ -408,9 +594,20 @@
               "Obtain vital signs",
               "Administer aspirin"
             ]
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Actions to be taken",
+            "example": [
+              "Check airway patency",
+              "Monitor blood pressure",
+              "Give 325mg aspirin"
+            ]
           }
-        },
-        "required": ["protocol", "steps"]
+        }
       },
       "ValidationResponse": {
         "type": "object",

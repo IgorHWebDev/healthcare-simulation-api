@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Healthcare System Diagrams</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .diagram-box {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .title {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .description {
+            color: #666;
+            margin: 10px 0;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .info-box {
+            background: #e9ecef;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="diagram-box">
+        <div class="title">Healthcare System Architecture</div>
+        
+        <div class="info-box">
+            <strong>Current View:</strong> System Overview
+            <br>
+            <strong>Components Shown:</strong> 12
+            <br>
+            <strong>Status:</strong> Active
+        </div>
+
+        <div class="mermaid">
+        graph TB
+            subgraph Core["Core System"]
+                API[API Gateway] --> Auth[Authentication]
+                Auth --> DB[Database]
+                DB --> Services[Healthcare Services]
+            end
+
+            subgraph Healthcare["Healthcare Modules"]
+                EMR[EMR System] --> Analytics[Analytics]
+                Analytics --> ML[Machine Learning]
+                ML --> Reports[Reporting]
+            end
+
+            Core --> Healthcare
+
+            classDef default fill:#f9f,stroke:#333,stroke-width:2px
+            classDef healthcare fill:#bfb,stroke:#333,stroke-width:2px
+
+            class API,Auth,DB,Services default
+            class EMR,Analytics,ML,Reports healthcare
+        </div>
+
+        <div class="description">
+            Core system components and healthcare modules with their relationships.
+            Click on any component to see its connections.
+        </div>
+
+        <button onclick="zoomIn()">Zoom In</button>
+        <button onclick="zoomOut()">Zoom Out</button>
+        <button onclick="resetView()">Reset View</button>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            securityLevel: 'loose',
+            flowchart: {
+                curve: 'basis',
+                padding: 20
+            }
+        });
+
+        let scale = 1;
+
+        function zoomIn() {
+            scale = Math.min(2, scale + 0.2);
+            updateZoom();
+        }
+
+        function zoomOut() {
+            scale = Math.max(0.5, scale - 0.2);
+            updateZoom();
+        }
+
+        function resetView() {
+            scale = 1;
+            updateZoom();
+        }
+
+        function updateZoom() {
+            document.querySelector('.mermaid svg').style.transform = `scale(${scale})`;
+        }
+
+        // Initialize interactivity after Mermaid renders
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const svg = document.querySelector('.mermaid svg');
+                const nodes = svg.querySelectorAll('.node');
+                
+                nodes.forEach(node => {
+                    node.style.cursor = 'pointer';
+                    node.addEventListener('click', () => {
+                        // Reset all nodes and edges
+                        svg.querySelectorAll('.edge').forEach(e => e.style.opacity = '0.2');
+                        nodes.forEach(n => n.style.opacity = '0.2');
+                        
+                        // Highlight clicked node
+                        node.style.opacity = '1';
+                        const connectedEdges = svg.querySelectorAll(`.edge[id*="${node.id}"]`);
+                        connectedEdges.forEach(edge => {
+                            edge.style.opacity = '1';
+                            const [source, target] = edge.id.split('-');
+                            document.getElementById(source).style.opacity = '1';
+                            document.getElementById(target).style.opacity = '1';
+                        });
+                    });
+                });
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

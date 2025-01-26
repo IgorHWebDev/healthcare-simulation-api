@@ -1,0 +1,13 @@
+{
+  "timestamp": "2025-01-26T22:37:20.199196",
+  "metrics": {
+    "test_duration_seconds": 30,
+    "requests_per_second": 100,
+    "average_response_time": 0.05
+  },
+  "environment": {
+    "cpu": "Apple M3",
+    "gpu": "Metal",
+    "memory": "16GB"
+  }
+}

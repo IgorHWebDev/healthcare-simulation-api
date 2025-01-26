@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Healthcare System Diagrams</title>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.esm.min.mjs';
+        
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .diagram-container {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .controls {
+            position: sticky;
+            top: 0;
+            background: white;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+        button {
+            padding: 8px 16px;
+            margin: 0 5px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .mermaid {
+            transition: transform 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <button onclick="prevDiagram()">Previous</button>
+        <button onclick="nextDiagram()">Next</button>
+        <button onclick="resetView()">Reset View</button>
+        <button onclick="zoomIn()">Zoom In</button>
+        <button onclick="zoomOut()">Zoom Out</button>
+        <span id="current-section"></span>
+    </div>
+
+    <div class="diagram-container">
+        <h2>1. System Overview</h2>
+        <div class="mermaid">
+        graph TB
+            subgraph Core["Core System"]
+                API["API Gateway"] --> Auth["Authentication"]
+                Auth --> Services["Healthcare Services"]
+                Services --> Data["Data Layer"]
+            end
+
+            subgraph Security["Security Layer"]
+                QR["Quantum Resistant"] --> Encrypt["Encryption"]
+                Encrypt --> Access["Access Control"]
+            end
+
+            subgraph Health["Healthcare Components"]
+                EMR["EMR System"] --> Analytics["Analytics"]
+                Analytics --> ML["Machine Learning"]
+            end
+
+            Core --> Security
+            Core --> Health
+
+            classDef default fill:#fff,stroke:#333,stroke-width:1px
+            classDef core fill:#bbf,stroke:#333,stroke-width:2px
+            classDef security fill:#fbf,stroke:#333,stroke-width:2px
+            classDef health fill:#bfb,stroke:#333,stroke-width:2px
+
+            class Core core
+            class Security security
+            class Health health
+        </div>
+    </div>
+
+    <div class="diagram-container">
+        <h2>2. Database Architecture</h2>
+        <div class="mermaid">
+        graph TB
+            subgraph API["API Layer"]
+                Interface["Database Interface"]
+                Models["Healthcare Models"]
+                Validation["Data Validation"]
+            end
+
+            subgraph DB["Database Layer"]
+                PostgreSQL["PostgreSQL"]
+                MongoDB["MongoDB"]
+                TimescaleDB["TimescaleDB"]
+            end
+
+            Interface --> Models
+            Models --> Validation
+            Interface --> PostgreSQL
+            Interface --> MongoDB
+            Interface --> TimescaleDB
+
+            classDef api fill:#f9f,stroke:#333,stroke-width:2px
+            classDef db fill:#bfb,stroke:#333,stroke-width:2px
+
+            class Interface,Models,Validation api
+            class PostgreSQL,MongoDB,TimescaleDB db
+        </div>
+    </div>
+
+    <script>
+        let currentScale = 1;
+        let currentTranslateX = 0;
+        let currentTranslateY = 0;
+        let currentDiagram = 0;
+        const totalDiagrams = 2;
+
+        function updateCurrentSection() {
+            document.getElementById('current-section').textContent = 
+                `Section ${currentDiagram + 1} of ${totalDiagrams}`;
+        }
+
+        function nextDiagram() {
+            if (currentDiagram < totalDiagrams - 1) {
+                currentDiagram++;
+                document.querySelectorAll('.diagram-container')[currentDiagram]
+                    .scrollIntoView({ behavior: 'smooth' });
+                updateCurrentSection();
+            }
+        }
+
+        function prevDiagram() {
+            if (currentDiagram > 0) {
+                currentDiagram--;
+                document.querySelectorAll('.diagram-container')[currentDiagram]
+                    .scrollIntoView({ behavior: 'smooth' });
+                updateCurrentSection();
+            }
+        }
+
+        function resetView() {
+            currentScale = 1;
+            currentTranslateX = 0;
+            currentTranslateY = 0;
+            updateTransform();
+        }
+
+        function zoomIn() {
+            currentScale = Math.min(2, currentScale + 0.1);
+            updateTransform();
+        }
+
+        function zoomOut() {
+            currentScale = Math.max(0.5, currentScale - 0.1);
+            updateTransform();
+        }
+
+        function updateTransform() {
+            const diagrams = document.querySelectorAll('.mermaid svg');
+            diagrams.forEach(svg => {
+                svg.style.transform = `scale(${currentScale}) 
+                    translate(${currentTranslateX}px, ${currentTranslateY}px)`;
+            });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            updateCurrentSection();
+            
+            // Add pan functionality
+            document.querySelectorAll('.mermaid').forEach(diagram => {
+                let isDragging = false;
+                let startX, startY;
+
+                diagram.addEventListener('mousedown', (e) => {
+                    isDragging = true;
+                    startX = e.clientX - currentTranslateX;
+                    startY = e.clientY - currentTranslateY;
+                });
+
+                document.addEventListener('mousemove', (e) => {
+                    if (!isDragging) return;
+                    currentTranslateX = e.clientX - startX;
+                    currentTranslateY = e.clientY - startY;
+                    updateTransform();
+                });
+
+                document.addEventListener('mouseup', () => {
+                    isDragging = false;
+                });
+
+                // Add wheel zoom
+                diagram.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+                    currentScale = Math.max(0.5, Math.min(2, currentScale + delta));
+                    updateTransform();
+                });
+            });
+        });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            switch(e.key) {
+                case 'ArrowRight':
+                    nextDiagram();
+                    break;
+                case 'ArrowLeft':
+                    prevDiagram();
+                    break;
+                case '0':
+                    resetView();
+                    break;
+            }
+        });
+    </script>
+</body>
+</html>

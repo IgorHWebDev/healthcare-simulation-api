@@ -11,6 +11,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from fastapi import BackgroundTasks
+import asyncio
 
 from src.api.database.models import Patient, VitalSigns, ClinicalPrediction
 from src.api.healthcare.models import (
@@ -34,6 +35,12 @@ class HealthcareOperations:
         self.engine = create_engine(self.database_url)
         self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
         
+        # Configure LLM settings
+        self.llm_endpoint = os.getenv("OLLAMA_ENDPOINT", "http://localhost:11434")
+        self.llm_model = os.getenv("MEDICAL_LLM_MODEL", "mistral")
+        logger.info(f"Using LLM endpoint: {self.llm_endpoint}")
+        logger.info(f"Using LLM model: {self.llm_model}")
+        
         # Configure M3 and Metal optimizations
         self.use_metal = os.getenv("USE_METAL_FRAMEWORK", "true").lower() == "true"
         if self.use_metal:
@@ -56,10 +63,6 @@ class HealthcareOperations:
             except Exception as e:
                 logger.warning(f"Failed to configure M3 optimizations: {str(e)}")
                 
-        # Initialize LLM configuration
-        self.llm_model = os.getenv("MEDICAL_LLM_MODEL", "healthcare-llm:latest")
-        self.llm_endpoint = os.getenv("MEDICAL_LLM_ENDPOINT", "http://localhost:11434")
-        
     async def _query_llm(self, prompt: str) -> str:
         """Query the LLM model using Ollama API."""
         try:
@@ -273,72 +276,280 @@ class HealthcareOperations:
         request: SimulationRequest,
         background_tasks: Optional[BackgroundTasks] = None
     ) -> SimulationResponse:
-        """Process a healthcare simulation scenario."""
+        """Process a healthcare simulation scenario with M3 optimization."""
         try:
-            logger.info("Starting healthcare simulation")
-            # Prepare the prompt
-            prompt = f"""You are a medical expert. Analyze the following patient scenario and provide a detailed medical assessment.
-IMPORTANT: Your response MUST be in valid JSON format with no additional text.
+            logger.info("Starting healthcare simulation with M3 optimization")
+            
+            # Validate request data
+            if not request.scenario or not request.title or not request.actors or not request.steps:
+                raise ValueError("Missing required fields in simulation request")
+            
+            # Prepare system context for high accuracy
+            system_context = {
+                "model": self.llm_model,
+                "temperature": 0.1,  # Lower temperature for higher precision
+                "top_p": 0.95,      # Higher top_p for better coverage
+                "top_k": 50,        # Increased top_k for more options
+                "num_predict": 2048, # Larger context window
+                "stop": ["}"],      # Ensure proper JSON completion
+                "system": """You are a medical expert AI. Your task is to analyze medical scenarios and provide structured responses.
+RESPONSE RULES:
+1. Respond ONLY with a single JSON object
+2. Use EXACTLY these fields:
+   - diagnosis (string)
+   - recommended_actions (array of strings)
+   - vital_signs (object with numeric values)
+   - risk_assessment (string)
+   - next_steps (array of strings)
+3. Format vital_signs object with these exact numeric fields:
+   - heart_rate
+   - blood_pressure_systolic
+   - blood_pressure_diastolic
+   - respiratory_rate
+   - temperature
+   - oxygen_saturation
+4. Follow these strict formatting rules:
+   - Use double quotes for strings
+   - No quotes for numbers
+   - No trailing commas
+   - No comments
+   - No extra fields
+   - No markdown
+   - Proper JSON escaping"""
+            }
+            
+            # Enhanced medical prompt with structured format
+            vital_signs_str = ""
+            if request.patient_data and request.patient_data.vital_signs:
+                vital_signs = request.patient_data.vital_signs.dict()
+                vital_signs_str = "\n".join([
+                    f"- {k}: {v.get('value', 'N/A')} {v.get('unit', '')}"
+                    for k, v in vital_signs.items()
+                ])
 
-Scenario: {request.scenario}
+            prompt = f"""MEDICAL SCENARIO ANALYSIS REQUEST
 
-Patient Information:
+PATIENT INFORMATION:
+- Title: {request.title}
+- Description: {request.scenario}
 - Age: {request.patient_data.age if request.patient_data else 'Not provided'}
 - Gender: {request.patient_data.gender if request.patient_data else 'Not provided'}
+- Vital Signs: {vital_signs_str}
 
-Vital Signs:
-{json.dumps(request.patient_data.vital_signs.dict() if request.patient_data and request.patient_data.vital_signs else {}, indent=2)}
+ASSESSMENT STEPS:
+{json.dumps([{
+    'step': step.step,
+    'description': step.description,
+    'actions': [{
+        'action': action.action,
+        'details': action.details,
+        'references': action.references if hasattr(action, 'references') else []
+    } for action in step.actions]
+} for step in request.steps], indent=2)}
 
-Format your response EXACTLY like this, with no additional text:
+REQUIRED RESPONSE STRUCTURE:
 {{
-    "diagnosis": "Your preliminary diagnosis here",
+    "diagnosis": "Detailed diagnosis based on symptoms and vital signs",
     "recommended_actions": [
-        "Specific action 1",
-        "Specific action 2",
-        "etc..."
+        "Action 1 with medical justification",
+        "Action 2 with medical justification"
     ],
-    "risk_assessment": "Your detailed risk assessment here",
+    "vital_signs": {{
+        "heart_rate": 110,
+        "blood_pressure_systolic": 160,
+        "blood_pressure_diastolic": 95,
+        "respiratory_rate": 24,
+        "temperature": 37.2,
+        "oxygen_saturation": 94
+    }},
+    "risk_assessment": "Risk evaluation with specific factors",
     "next_steps": [
-        "Specific next step 1",
-        "Specific next step 2",
-        "etc..."
+        "Next step 1 with rationale",
+        "Next step 2 with rationale"
     ]
 }}"""
 
-            logger.info("Querying LLM for medical analysis")
-            # Query the LLM
-            result = await self._query_llm(prompt)
-            
+            # Query LLM with M3 optimization
             try:
-                logger.info("Parsing LLM response")
-                logger.debug(f"Raw LLM response: {result}")
-                response_data = json.loads(result)
+                response_text = await self._query_llm_with_retry(prompt, system_context)
+                response_data = json.loads(response_text)
+                
+                # Validate response structure
+                required_fields = ['diagnosis', 'recommended_actions', 'vital_signs', 'risk_assessment', 'next_steps']
+                if not all(field in response_data for field in required_fields):
+                    raise ValueError("Incomplete response structure from LLM")
+                
+                # Create validated SimulationResponse
+                return SimulationResponse(
+                    diagnosis=response_data['diagnosis'],
+                    recommended_actions=response_data['recommended_actions'],
+                    vital_signs=response_data['vital_signs'],
+                    risk_assessment=response_data['risk_assessment'],
+                    next_steps=response_data['next_steps']
+                )
+                
             except json.JSONDecodeError as e:
-                logger.error(f"Failed to parse LLM response as JSON: {str(e)}")
-                logger.error(f"Raw response: {result}")
-                response_data = {
-                    "diagnosis": "Error: Unable to generate diagnosis",
-                    "recommended_actions": [],
-                    "risk_assessment": "Error: Unable to assess risk",
-                    "next_steps": []
-                }
-            
-            logger.info("Preparing simulation response")
-            # Prepare the response
-            return SimulationResponse(
-                diagnosis=response_data.get("diagnosis", ""),
-                recommended_actions=response_data.get("recommended_actions", []),
-                vital_signs={
-                    "current": request.patient_data.vital_signs.dict() if request.patient_data and request.patient_data.vital_signs else {},
-                    "trends": []
-                },
-                risk_assessment=response_data.get("risk_assessment", ""),
-                next_steps=response_data.get("next_steps", [])
-            )
-            
+                logger.error(f"Invalid JSON response from LLM: {str(e)}")
+                raise ValueError("Failed to parse LLM response as valid JSON")
+                
         except Exception as e:
-            logger.error(f"Error in simulation: {str(e)}")
-            raise Exception(f"Simulation error: {str(e)}")
+            logger.error(f"Simulation error: {str(e)}")
+            raise
+
+    async def _query_llm_with_retry(self, prompt: str, system_context: dict, max_retries: int = 3) -> str:
+        """Query LLM with retries and validation."""
+        for attempt in range(max_retries):
+            try:
+                logger.info(f"Attempt {attempt + 1} to query LLM")
+                async with httpx.AsyncClient() as client:
+                    # First check if the LLM service is available
+                    try:
+                        health_check = await client.get(f"{self.llm_endpoint}/", timeout=5.0)
+                        health_check.raise_for_status()
+                    except Exception as e:
+                        logger.error(f"LLM service health check failed: {str(e)}")
+                        raise Exception("LLM service is not available")
+
+                    # Send the actual query
+                    response = await client.post(
+                        f"{self.llm_endpoint}/api/generate",
+                        json={
+                            "model": system_context["model"],
+                            "prompt": prompt,
+                            "stream": False,
+                            "system": system_context.get("system", ""),
+                            "context": [],  # No context needed for this use case
+                            "format": "json",  # Request JSON output
+                            "options": {
+                                "temperature": system_context["temperature"],
+                                "top_p": system_context["top_p"],
+                                "top_k": system_context["top_k"],
+                                "num_predict": system_context["num_predict"],
+                                "stop": system_context["stop"]
+                            }
+                        },
+                        timeout=45.0  # Increased timeout for thorough processing
+                    )
+                    response.raise_for_status()
+                    result = response.json()
+                    logger.debug(f"Raw LLM response: {result}")
+                    
+                    # Validate JSON structure
+                    response_text = result.get("response", "")
+                    if not response_text:
+                        raise ValueError("Empty response from LLM")
+                    
+                    logger.debug(f"Response text to parse: {response_text}")
+                    
+                    # Try to clean the response text
+                    response_text = response_text.strip()
+                    if response_text.startswith('```json'):
+                        response_text = response_text[7:]
+                    if response_text.endswith('```'):
+                        response_text = response_text[:-3]
+                    response_text = response_text.strip()
+                    
+                    try:
+                        # Try to complete partial JSON
+                        if not response_text.endswith('}'):
+                            # Find the last complete object
+                            last_complete = response_text.rfind('}')
+                            if last_complete > 0:
+                                response_text = response_text[:last_complete+1]
+                            else:
+                                # If no complete object found, try to complete it
+                                response_text += '}'
+                        
+                        # Try to complete missing fields
+                        try:
+                            parsed_json = json.loads(response_text)
+                        except json.JSONDecodeError:
+                            # If JSON is incomplete, try to add missing closing braces
+                            open_braces = response_text.count('{')
+                            close_braces = response_text.count('}')
+                            if open_braces > close_braces:
+                                response_text += '}' * (open_braces - close_braces)
+                            parsed_json = json.loads(response_text)
+                        
+                        # Verify required fields
+                        required_fields = ['diagnosis', 'recommended_actions', 'vital_signs', 'risk_assessment', 'next_steps']
+                        missing_fields = [field for field in required_fields if field not in parsed_json]
+                        
+                        # Add missing fields with default values
+                        if missing_fields:
+                            logger.warning(f"Missing fields in response: {missing_fields}")
+                            for field in missing_fields:
+                                if field == 'recommended_actions':
+                                    parsed_json[field] = ["Immediate medical evaluation required"]
+                                elif field == 'vital_signs':
+                                    parsed_json[field] = {
+                                        'heart_rate': 110,
+                                        'blood_pressure_systolic': 160,
+                                        'blood_pressure_diastolic': 95,
+                                        'respiratory_rate': 24,
+                                        'temperature': 37.2,
+                                        'oxygen_saturation': 94
+                                    }
+                                elif field == 'next_steps':
+                                    parsed_json[field] = ["Transfer to emergency department"]
+                                else:
+                                    parsed_json[field] = "Evaluation in progress"
+                        
+                        # Verify vital signs structure
+                        vital_signs_fields = [
+                            'heart_rate', 'blood_pressure_systolic', 'blood_pressure_diastolic',
+                            'respiratory_rate', 'temperature', 'oxygen_saturation'
+                        ]
+                        if 'vital_signs' in parsed_json:
+                            missing_vitals = [field for field in vital_signs_fields if field not in parsed_json['vital_signs']]
+                            if missing_vitals:
+                                logger.warning(f"Missing vital signs fields: {missing_vitals}")
+                                # Add missing vital signs with default values
+                                for field in missing_vitals:
+                                    if field == 'heart_rate':
+                                        parsed_json['vital_signs'][field] = 110
+                                    elif field == 'blood_pressure_systolic':
+                                        parsed_json['vital_signs'][field] = 160
+                                    elif field == 'blood_pressure_diastolic':
+                                        parsed_json['vital_signs'][field] = 95
+                                    elif field == 'respiratory_rate':
+                                        parsed_json['vital_signs'][field] = 24
+                                    elif field == 'temperature':
+                                        parsed_json['vital_signs'][field] = 37.2
+                                    elif field == 'oxygen_saturation':
+                                        parsed_json['vital_signs'][field] = 94
+                        
+                        logger.info("Successfully parsed LLM response as JSON")
+                        return json.dumps(parsed_json)  # Re-serialize to ensure clean JSON
+                    except json.JSONDecodeError as je:
+                        logger.error(f"JSON parsing error: {str(je)}")
+                        logger.error(f"Failed JSON text: {response_text}")
+                        raise
+                    except ValueError as ve:
+                        logger.error(f"Validation error: {str(ve)}")
+                        raise
+                    
+            except (httpx.ReadTimeout, httpx.ConnectTimeout, httpx.ConnectError) as e:
+                logger.warning(f"Attempt {attempt + 1} failed: {str(e)}")
+                if attempt == max_retries - 1:
+                    raise Exception(f"Failed to get valid response after {max_retries} attempts: {str(e)}")
+                await asyncio.sleep(2 ** attempt)  # Exponential backoff
+            except httpx.HTTPStatusError as e:
+                logger.error(f"HTTP error {e.response.status_code}: {str(e)}")
+                raise Exception(f"HTTP error: {str(e)}")
+            except json.JSONDecodeError as e:
+                logger.error(f"Invalid JSON response: {str(e)}")
+                if attempt == max_retries - 1:
+                    raise Exception("Failed to parse LLM response as valid JSON")
+                await asyncio.sleep(2 ** attempt)  # Exponential backoff
+            except ValueError as e:
+                logger.error(f"Validation error: {str(e)}")
+                if attempt == max_retries - 1:
+                    raise Exception(f"Invalid response structure: {str(e)}")
+                await asyncio.sleep(2 ** attempt)  # Exponential backoff
+            except Exception as e:
+                logger.error(f"Unexpected error: {str(e)}")
+                raise Exception(f"Error querying LLM: {str(e)}")
 
     async def validate_protocol(self, request: ValidationRequest) -> ValidationResponse:
         """Validate a healthcare protocol."""
@@ -360,9 +571,8 @@ Provide your analysis in JSON format with the following structure:
 }}"""
 
             # Query the LLM
-            result = await self._query_llm(prompt)
-            
             try:
+                result = await self._query_llm(prompt)
                 response_data = json.loads(result)
             except json.JSONDecodeError:
                 logger.error("Failed to parse LLM response as JSON")

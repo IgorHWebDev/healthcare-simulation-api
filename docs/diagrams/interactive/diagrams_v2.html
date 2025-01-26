@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Integrated Quantum-Resistant Healthcare Information System</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1, h2, h3, h4 {
+            color: #333;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-top: 40px;
+        }
+        h1 {
+            margin-top: 0;
+        }
+        .diagram-container {
+            background-color: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .description {
+            color: #666;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+        .code-block {
+            background-color: #e8e8e8;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+        ul, ol {
+            margin-left: 20px;
+        }
+        li {
+            margin: 5px 0;
+        }
+        pre {
+            background-color: #e8e8e8;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 90%;
+            overflow-x: auto;
+        }
+        .mermaid {
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+        }
+        .status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+        .completed {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+        .in-progress {
+            background-color: #fcf8e3;
+            color: #8a6d3b;
+        }
+        .planned {
+            background-color: #f2dede;
+            color: #a94442;
+        }
+    </style>
+</head>
+<body>
+    <h1>Integrated Quantum-Resistant Healthcare Information System</h1>
+    <div class="description">
+        A comprehensive, quantum-resistant system built on M3-optimized architecture,
+        integrating multiple specialized agents for healthcare, research, and blockchain operations,
+        following a Hybrid Agile–Waterfall approach.
+    </div>
+
+    <div class="diagram-container">
+        <h2>1. Organizational Structure and Roles</h2>
+        <div class="description">
+            Key team roles and their responsibilities in the development process.
+        </div>
+        <div class="mermaid">
+        flowchart TB
+            subgraph Management["Project Management"]
+                PM["Project Manager"] --> Process["Scientific Process Alignment"]
+                PM --> Coord["Team Coordination"]
+            end
+
+            subgraph Technical["Technical Team"]
+                AI["AI Research Scientist"] --> Models["AI Model Design"]
+                DS["Data Scientist"] --> Analytics["Data Analysis"]
+                SE["Software Engineer"] --> Infra["Infrastructure"]
+                UI["UX/UI Designer"] --> Design["User Interface"]
+            end
+
+            subgraph Domain["Domain Expertise"]
+                Expert["Domain Expert"] --> Context["Healthcare Context"]
+                QA["Quality Assurance"] --> Testing["System Reliability"]
+                Ethics["Ethics Officer"] --> Compliance["Regulatory Compliance"]
+            end
+
+            Management --> Technical
+            Technical --> Domain
+            Domain --> Management
+
+            classDef management fill:#f9f,stroke:#333,stroke-width:2px
+            classDef technical fill:#bfb,stroke:#333,stroke-width:2px
+            classDef domain fill:#bbf,stroke:#333,stroke-width:2px
+
+            class PM,Process,Coord management
+            class AI,DS,SE,UI,Models,Analytics,Infra,Design technical
+            class Expert,QA,Ethics,Context,Testing,Compliance domain
+        </div>
+    </div>
+
+    <div class="diagram-container">
+        <h2>2. M3 Hardware Optimization Architecture</h2>
+        <div class="description">
+            Detailed view of M3 silicon optimization and Metal framework integration.
+        </div>
+        <div class="mermaid">
+        flowchart TB
+            subgraph M3["M3 Silicon Architecture"]
+                Metal["Metal Framework"] --> Accel["Hardware Acceleration"]
+                
+                subgraph Compute["Compute Units"]
+                    CPU["CPU Optimization"] --> TaskDist["Task Distribution"]
+                    GPU["GPU Acceleration"] --> MLOps["ML Operations"]
+                    Neural["Neural Engine"] --> AI["AI Processing"]
+                end
+                
+                subgraph Memory["Memory Management"]
+                    Cache["Smart Caching"] --> Pool["Memory Pooling"]
+                    Pool --> Alloc["Efficient Allocation"]
+                    Alloc --> Monitor["Resource Monitoring"]
+                end
+                
+                Accel --> Compute
+                Compute --> Memory
+            end
+
+            subgraph Ollama["Ollama Integration"]
+                Config["M3 Configuration"] --> Models["Healthcare Models"]
+                Models --> Perf["Performance Metrics"]
+                Perf --> Opt["Optimization Loop"]
+            end
+
+            M3 --> Ollama
+
+            classDef m3 fill:#f9f,stroke:#333,stroke-width:2px
+            classDef compute fill:#bfb,stroke:#333,stroke-width:2px
+            classDef memory fill:#bbf,stroke:#333,stroke-width:2px
+            classDef ollama fill:#fbf,stroke:#333,stroke-width:2px
+
+            class Metal,Accel m3
+            class CPU,GPU,Neural,TaskDist,MLOps,AI compute
+            class Cache,Pool,Alloc,Monitor memory
+            class Config,Models,Perf,Opt ollama
+        </div>
+    </div>
+
+    <div class="diagram-container">
+        <h2>3. Development Workflow</h2>
+        <div class="description">
+            Hybrid Agile-Waterfall approach with integrated quality assurance and compliance checks.
+        </div>
+        <div class="mermaid">
+        flowchart TB
+            subgraph Waterfall["Waterfall Phases"]
+                P["Planning"] --> A["Architecture"]
+                A --> V["Validation"]
+                V --> D["Deployment"]
+            end
+
+            subgraph Agile["Agile Sprints"]
+                SP["Sprint Planning"] --> SE["Sprint Execution"]
+                SE --> SR["Sprint Review"]
+                SR --> Retro["Retrospective"]
+                
+                subgraph Quality["Quality Assurance"]
+                    Test["Automated Testing"]
+                    Valid["Validation Protocols"]
+                    Audit["Compliance Audit"]
+                end
+                
+                SE --> Quality
+            end
+
+            subgraph Ethics["Ethical Guidelines"]
+                Safety["Safety Measures"]
+                Standards["Research Standards"]
+                Review["Ethical Review"]
+            end
+
+            P --> Agile
+            Agile --> V
+            Quality --> Ethics
+
+            classDef waterfall fill:#f9f,stroke:#333,stroke-width:2px
+            classDef agile fill:#bfb,stroke:#333,stroke-width:2px
+            classDef quality fill:#bbf,stroke:#333,stroke-width:2px
+            classDef ethics fill:#fbf,stroke:#333,stroke-width:2px
+
+            class P,A,V,D waterfall
+            class SP,SE,SR,Retro agile
+            class Test,Valid,Audit quality
+            class Safety,Standards,Review ethics
+        </div>
+    </div>
+
+    <div class="diagram-container">
+        <h2>4. System Architecture</h2>
+        <div class="description">
+            Core system components with M3 optimization and healthcare integration.
+        </div>
+        <div class="mermaid">
+        flowchart TB
+            subgraph Frontend["Frontend Layer"]
+                UI["User Interface"] --> API["API Gateway (✅)"]
+                API --> Auth["Authentication (✅)"]
+            end
+
+            subgraph Core["Core Processing"]
+                Auth --> HC["Healthcare Operations (⏳)"]
+                HC --> LLM["LLM Integration (⏳)"]
+                HC --> Val["Validation Engine (✅)"]
+                
+                subgraph M3["M3 Optimization (✅)"]
+                    Metal["Metal Framework"] --> Accel["Hardware Acceleration"]
+                    Accel --> MLOps["ML Operations"]
+                    Accel --> ImgProc["Image Processing"]
+                end
+            end
+
+            subgraph Healthcare["Healthcare Engine"]
+                HC --> Sim["Simulation Engine (⏳)"]
+                Sim --> VS["Vital Signs (✅)"]
+                Sim --> CR["Clinical Recommendations (⏳)"]
+                
+                subgraph Validation["Validation Protocols"]
+                    QA["Quality Assurance"]
+                    Ethics["Ethical Compliance"]
+                    Safety["Safety Measures"]
+                end
+            end
+
+            Core --> Healthcare
+            Healthcare --> Validation
+
+            classDef default fill:#fff,stroke:#333,stroke-width:1px
+            classDef completed fill:#dff0d8,stroke:#3c763d,stroke-width:2px
+            classDef inProgress fill:#fcf8e3,stroke:#8a6d3b,stroke-width:2px
+            classDef validation fill:#fbf,stroke:#333,stroke-width:2px
+
+            class UI,API,Auth,Val,M3,VS completed
+            class HC,LLM,Sim,CR inProgress
+            class QA,Ethics,Safety validation
+        </div>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            securityLevel: 'loose',
+            themeVariables: {
+                fontFamily: 'arial'
+            }
+        });
+    </script>
+</body>
+</html>

@@ -37,6 +37,7 @@ from src.api.healthcare.models import (
 from src.api.healthcare.operations import HealthcareOperations
 from src.api.render_endpoints import router as render_router
 from src.api.auth import verify_api_key
+from src.api.ollama_endpoints import router as ollama_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -245,3 +246,7 @@ app.include_router(
     prefix="/api/v1",
     tags=["healthcare"]
 )
+
+# Include Ollama router
+logger.info("Including Ollama router")
+app.include_router(ollama_router)

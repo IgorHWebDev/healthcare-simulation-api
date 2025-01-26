@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Healthcare Framework Interactive Diagrams</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .nav {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .diagram-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .controls {
+            margin: 10px 0;
+        }
+        button {
+            padding: 8px 16px;
+            margin: 0 5px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .info {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .description {
+            color: #666;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <h1>Healthcare Framework Diagrams</h1>
+        <div class="controls">
+            <button onclick="showSection('system')">System Architecture</button>
+            <button onclick="showSection('development')">Development Flow</button>
+            <button onclick="showSection('healthcare')">Healthcare Components</button>
+            <button onclick="showSection('technical')">Technical Implementation</button>
+        </div>
+    </div>
+
+    <div id="system" class="diagram-section">
+        <h2>System Architecture</h2>
+        <div class="info">
+            Shows the complete system overview with M3 optimization layer
+        </div>
+        <div class="mermaid">
+        graph TB
+            subgraph M3["M3 Optimization Layer"]
+                Metal["Metal Framework"]
+                SIMD["SIMD Operations"]
+                Neural["Neural Engine"]
+            end
+
+            subgraph Core["Core System"]
+                API["API Gateway"]
+                Auth["Authentication"]
+                DB["Database"]
+            end
+
+            M3 --> Core
+            
+            classDef m3 fill:#f9f,stroke:#333,stroke-width:2px
+            classDef core fill:#bbf,stroke:#333,stroke-width:2px
+
+            class Metal,SIMD,Neural m3
+            class API,Auth,DB core
+        </div>
+        <div class="controls">
+            <button onclick="zoomIn('system')">Zoom In</button>
+            <button onclick="zoomOut('system')">Zoom Out</button>
+            <button onclick="resetView('system')">Reset</button>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Mermaid
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                curve: 'basis',
+                padding: 20
+            }
+        });
+
+        let scale = 1;
+        
+        function showSection(id) {
+            document.querySelectorAll('.diagram-section').forEach(section => {
+                section.style.display = section.id === id ? 'block' : 'none';
+            });
+        }
+
+        function zoomIn(sectionId) {
+            scale = Math.min(2, scale + 0.2);
+            updateZoom(sectionId);
+        }
+
+        function zoomOut(sectionId) {
+            scale = Math.max(0.5, scale - 0.2);
+            updateZoom(sectionId);
+        }
+
+        function resetView(sectionId) {
+            scale = 1;
+            updateZoom(sectionId);
+        }
+
+        function updateZoom(sectionId) {
+            const svg = document.querySelector(`#${sectionId} .mermaid svg`);
+            if (svg) {
+                svg.style.transform = `scale(${scale})`;
+            }
+        }
+
+        // Initialize interactivity
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                document.querySelectorAll('.mermaid svg').forEach(svg => {
+                    const nodes = svg.querySelectorAll('.node');
+                    nodes.forEach(node => {
+                        node.style.cursor = 'pointer';
+                        node.addEventListener('click', () => {
+                            svg.querySelectorAll('.edge').forEach(e => e.style.opacity = '0.2');
+                            nodes.forEach(n => n.style.opacity = '0.2');
+                            node.style.opacity = '1';
+                            
+                            const connectedEdges = svg.querySelectorAll(`.edge[id*="${node.id}"]`);
+                            connectedEdges.forEach(edge => {
+                                edge.style.opacity = '1';
+                                const [source, target] = edge.id.split('-');
+                                document.getElementById(source).style.opacity = '1';
+                                document.getElementById(target).style.opacity = '1';
+                            });
+                        });
+                    });
+                });
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
