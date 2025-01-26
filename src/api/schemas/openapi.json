@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Healthcare Simulation API",
-    "description": "Healthcare simulation API with integrated Ollama LLM and custom GPT capabilities",
+    "description": "API for healthcare simulation with integrated Ollama medical LLM model (phi_lora_3b_medical_healthcaremagic_gguf)",
     "version": "0.3.0",
     "contact": {
       "name": "Healthcare Simulation Team",
@@ -203,6 +203,122 @@
                       }
                     }
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "description": "Check the health status of the API and its components including Ollama integration",
+        "operationId": "health_check",
+        "tags": ["System"],
+        "responses": {
+          "200": {
+            "description": "System health status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": ["healthy", "unhealthy"]
+                    },
+                    "components": {
+                      "type": "object",
+                      "properties": {
+                        "api": {
+                          "type": "string",
+                          "enum": ["up", "down"]
+                        },
+                        "database": {
+                          "type": "string",
+                          "enum": ["up", "down"]
+                        },
+                        "ollama": {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": ["up", "down"]
+                            },
+                            "base_url": {
+                              "type": "string"
+                            },
+                            "models": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "m3_optimized": {
+                              "type": "boolean"
+                            },
+                            "metal_enabled": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "performance": {
+                      "type": "object",
+                      "properties": {
+                        "metal_framework": {
+                          "type": "object",
+                          "properties": {
+                            "enabled": {
+                              "type": "boolean"
+                            },
+                            "device": {
+                              "type": "integer"
+                            },
+                            "compute_units": {
+                              "type": "string"
+                            },
+                            "memory_limit": {
+                              "type": "string"
+                            },
+                            "precision": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "resource_usage": {
+                          "type": "object",
+                          "properties": {
+                            "cpu_percent": {
+                              "type": "number"
+                            },
+                            "memory_percent": {
+                              "type": "number"
+                            },
+                            "gpu_utilization": {
+                              "type": "number"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             }
