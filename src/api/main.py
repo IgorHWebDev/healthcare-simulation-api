@@ -147,6 +147,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+async def root():
+    """Root endpoint that returns API information."""
+    return {
+        "name": "Healthcare Simulation API",
+        "version": "1.0.0",
+        "description": "API for healthcare simulations and medical assessments",
+        "endpoints": {
+            "health": "/health",
+            "docs": "/docs",
+            "openapi": "/openapi.json"
+        }
+    }
+
 @app.get("/health")
 async def health_check():
     """Check the health status of the API and its components."""
@@ -225,8 +239,9 @@ async def validate_protocol(
         )
 
 # Include routers
-logger.info("Including healthcare router with prefix: /v1")
+logger.info("Including healthcare router with prefix: /api/v1")
 app.include_router(
     render_router,
-    prefix="/v1"
+    prefix="/api/v1",
+    tags=["healthcare"]
 )
