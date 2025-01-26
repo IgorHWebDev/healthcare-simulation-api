@@ -1,5 +1,5 @@
 """
-Main FastAPI application for healthcare simulation API.
+Main FastAPI application with integrated Ollama and custom GPT capabilities.
 Optimized for M3 silicon chip and Metal framework acceleration.
 """
 from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Security
@@ -38,6 +38,7 @@ from src.api.healthcare.operations import HealthcareOperations
 from src.api.render_endpoints import router as render_router
 from src.api.auth import verify_api_key
 from src.api.ollama_endpoints import router as ollama_router
+from src.api.custom_gpt_handler import router as custom_gpt_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -134,8 +135,8 @@ async def lifespan(app: FastAPI):
 # Initialize FastAPI app
 app = FastAPI(
     title="Healthcare Simulation API",
-    description="Healthcare Simulation API powered by Ollama multi-model support",
-    version="0.2.0",
+    description="Healthcare simulation API with Ollama integration and custom GPT capabilities",
+    version="0.3.0",
     lifespan=lifespan
 )
 
@@ -250,3 +251,7 @@ app.include_router(
 # Include Ollama router
 logger.info("Including Ollama router")
 app.include_router(ollama_router)
+
+# Include custom GPT router
+logger.info("Including custom GPT router")
+app.include_router(custom_gpt_router)

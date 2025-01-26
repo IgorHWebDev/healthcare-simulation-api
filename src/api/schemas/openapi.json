@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Healthcare Simulation API",
-    "description": "Healthcare simulation API with integrated Ollama LLM capabilities",
+    "description": "Healthcare simulation API with integrated Ollama LLM and custom GPT capabilities",
     "version": "0.3.0",
     "contact": {
       "name": "Healthcare Simulation Team",
@@ -112,6 +112,101 @@
           },
           "401": {"$ref": "#/components/responses/UnauthorizedError"},
           "500": {"$ref": "#/components/responses/ServerError"}
+        }
+      }
+    },
+    "/v1/custom-gpt/process": {
+      "post": {
+        "summary": "Process custom GPT request",
+        "description": "Process a request using the Ollama healthcare model",
+        "operationId": "process_gpt_request",
+        "tags": ["Custom GPT Integration"],
+        "security": [{"APIKeyHeader": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomGPTRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomGPTResponse"
+                }
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/UnauthorizedError"},
+          "500": {"$ref": "#/components/responses/ServerError"}
+        }
+      }
+    },
+    "/v1/custom-gpt/capabilities": {
+      "get": {
+        "summary": "Get model capabilities",
+        "description": "Get available model capabilities and endpoints",
+        "operationId": "get_capabilities",
+        "tags": ["Custom GPT Integration"],
+        "responses": {
+          "200": {
+            "description": "Model capabilities",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "available_models": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "capabilities": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "optimized_for_m3": {
+                            "type": "boolean"
+                          },
+                          "metal_enabled": {
+                            "type": "boolean"
+                          }
+                        }
+                      }
+                    },
+                    "endpoints": {
+                      "type": "object",
+                      "properties": {
+                        "generate": {
+                          "type": "string"
+                        },
+                        "chat": {
+                          "type": "string"
+                        },
+                        "simulate": {
+                          "type": "string"
+                        },
+                        "validate": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       }
     }
@@ -302,6 +397,53 @@
           },
           "oxygen_saturation": {
             "type": "integer"
+          }
+        }
+      },
+      "CustomGPTRequest": {
+        "type": "object",
+        "required": ["query"],
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "User query or command"
+          },
+          "context": {
+            "type": "object",
+            "description": "Additional context"
+          },
+          "patient_data": {
+            "type": "object",
+            "description": "Patient-specific data"
+          },
+          "model_name": {
+            "type": "string",
+            "description": "Ollama model name",
+            "default": "phi_lora_3b_medical_healthcaremagic_gguf"
+          }
+        }
+      },
+      "CustomGPTResponse": {
+        "type": "object",
+        "properties": {
+          "response": {
+            "type": "string",
+            "description": "Generated response"
+          },
+          "recommendations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Medical recommendations"
+          },
+          "vital_signs": {
+            "type": "object",
+            "description": "Updated vital signs"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Response metadata"
           }
         }
       }
