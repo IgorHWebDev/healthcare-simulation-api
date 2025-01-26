@@ -22,6 +22,7 @@ from uuid import UUID
 from pydantic import ValidationError
 import httpx
 import datetime
+from .ollama_config import OllamaConfig
 
 # Add src directory to Python path
 src_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -39,6 +40,10 @@ from src.api.render_endpoints import router as render_router
 from src.api.auth import verify_api_key
 from src.api.ollama_endpoints import router as ollama_router
 from src.api.custom_gpt_handler import router as custom_gpt_router
+
+# Initialize Ollama configuration
+ollama_config = OllamaConfig()
+OLLAMA_BASE_URL = ollama_config.base_url
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -172,33 +177,47 @@ async def health_check():
         try:
             with engine.connect() as conn:
                 conn.execute(text("SELECT 1"))
-        except Exception:
+        except Exception as e:
+            logger.error(f"Database health check failed: {str(e)}")
             db_status = "down"
             
-        # Check medical LLM status
-        llm_status = "up"
+        # Check Ollama status
+        ollama_status = "up"
         try:
             async with httpx.AsyncClient() as client:
-                response = await client.get(f"{MEDICAL_LLM_CONFIG['model_endpoint']}/api/tags")
+                response = await client.get(f"{OLLAMA_BASE_URL}/api/tags")
                 if response.status_code != 200:
-                    llm_status = "down"
-        except Exception:
-            llm_status = "down"
+                    ollama_status = "down"
+                    logger.error(f"Ollama health check failed with status code: {response.status_code}")
+        except Exception as e:
+            logger.error(f"Ollama health check failed: {str(e)}")
+            ollama_status = "down"
+            
+        # Get M3 optimization status
+        m3_status = ollama_config.get_resource_usage()
             
         return {
-            "status": "healthy" if db_status == "up" and llm_status == "up" else "unhealthy",
+            "status": "healthy" if db_status == "up" and ollama_status == "up" else "unhealthy",
             "components": {
                 "api": "up",
                 "database": db_status,
-                "medical_llm": llm_status,
-                "m3_optimization": "up" if os.getenv("M3_OPTIMIZER_ENABLED", "true").lower() == "true" else "down",
-                "metal_framework": "up" if os.getenv("METAL_FRAMEWORK_ENABLED", "true").lower() == "true" else "down"
+                "ollama": {
+                    "status": ollama_status,
+                    "base_url": OLLAMA_BASE_URL,
+                    "models": response.json()["models"] if ollama_status == "up" else [],
+                    "m3_optimized": ollama_config.is_m3,
+                    "metal_enabled": ollama_config.metal_enabled
+                }
             },
             "performance": {
-                "metal_enabled": os.getenv("METAL_FRAMEWORK_ENABLED", "true").lower() == "true",
-                "compute_units": "all",
-                "memory_limit": "8G",
-                "precision": "float16"
+                "metal_framework": {
+                    "enabled": ollama_config.metal_enabled,
+                    "device": 0,
+                    "compute_units": "all",
+                    "memory_limit": "8G",
+                    "precision": "float16"
+                },
+                "resource_usage": m3_status
             },
             "timestamp": datetime.datetime.utcnow().isoformat()
         }
@@ -206,7 +225,7 @@ async def health_check():
         logger.error(f"Health check failed: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Health check failed"
+            detail=f"Health check failed: {str(e)}"
         )
 
 @app.post("/v1/healthcare/simulate", response_model=SimulationResponse)
