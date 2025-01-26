@@ -19,8 +19,8 @@ from src.api.healthcare.models import (
     SimulationRequest,
     ValidationRequest
 )
+from src.api.auth import verify_api_key
 from src.api.security.auth import get_current_user, User
-from src.api.main import verify_api_key
 
 # Configure logging
 logger = logging.getLogger(__name__)

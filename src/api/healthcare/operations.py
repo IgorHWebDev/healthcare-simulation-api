@@ -4,6 +4,7 @@ Healthcare operations optimized for M3 silicon and Metal framework.
 import os
 import logging
 import json
+import httpx
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 from uuid import UUID, uuid4
@@ -17,7 +18,9 @@ from src.api.healthcare.models import (
     PatientCreateRequest,
     AnalysisRequest,
     SimulationRequest,
-    ValidationRequest
+    ValidationRequest,
+    SimulationResponse,
+    ValidationResponse
 )
 
 # Configure logging
@@ -52,7 +55,44 @@ class HealthcareOperations:
                 logger.info("M3 optimizations enabled")
             except Exception as e:
                 logger.warning(f"Failed to configure M3 optimizations: {str(e)}")
-                self.m3_enabled = False
+                
+        # Initialize LLM configuration
+        self.llm_model = os.getenv("MEDICAL_LLM_MODEL", "healthcare-llm:latest")
+        self.llm_endpoint = os.getenv("MEDICAL_LLM_ENDPOINT", "http://localhost:11434")
+        
+    async def _query_llm(self, prompt: str) -> str:
+        """Query the LLM model using Ollama API."""
+        try:
+            async with httpx.AsyncClient() as client:
+                logger.info(f"Sending request to LLM at {self.llm_endpoint}")
+                response = await client.post(
+                    f"{self.llm_endpoint}/api/generate",
+                    json={
+                        "model": self.llm_model,
+                        "prompt": prompt,
+                        "stream": False,
+                        "options": {
+                            "temperature": 0.7,
+                            "top_p": 0.9,
+                            "top_k": 40,
+                            "num_predict": 1024,
+                        }
+                    },
+                    timeout=30.0
+                )
+                response.raise_for_status()
+                result = response.json()
+                logger.info("Successfully received response from LLM")
+                return result.get("response", "")
+        except httpx.TimeoutError:
+            logger.error("Timeout while querying LLM")
+            raise Exception("LLM request timed out")
+        except httpx.HTTPError as e:
+            logger.error(f"HTTP error while querying LLM: {str(e)}")
+            raise Exception(f"LLM HTTP error: {str(e)}")
+        except Exception as e:
+            logger.error(f"Error querying LLM: {str(e)}")
+            raise Exception(f"LLM error: {str(e)}")
 
     async def create_patient(self, patient_request: PatientCreateRequest) -> UUID:
         """Create a new patient record with M3-optimized data processing."""
@@ -230,44 +270,119 @@ class HealthcareOperations:
 
     async def simulate_scenario(
         self,
-        simulation_request: SimulationRequest,
-        background_tasks: BackgroundTasks
-    ) -> Dict[str, Any]:
-        """Simulate medical scenario with M3 optimization."""
+        request: SimulationRequest,
+        background_tasks: Optional[BackgroundTasks] = None
+    ) -> SimulationResponse:
+        """Process a healthcare simulation scenario."""
         try:
-            # Initialize simulation parameters
-            scenario_id = str(uuid4())
-            current_step = 1
+            logger.info("Starting healthcare simulation")
+            # Prepare the prompt
+            prompt = f"""You are a medical expert. Analyze the following patient scenario and provide a detailed medical assessment.
+IMPORTANT: Your response MUST be in valid JSON format with no additional text.
+
+Scenario: {request.scenario}
+
+Patient Information:
+- Age: {request.patient_data.age if request.patient_data else 'Not provided'}
+- Gender: {request.patient_data.gender if request.patient_data else 'Not provided'}
+
+Vital Signs:
+{json.dumps(request.patient_data.vital_signs.dict() if request.patient_data and request.patient_data.vital_signs else {}, indent=2)}
+
+Format your response EXACTLY like this, with no additional text:
+{{
+    "diagnosis": "Your preliminary diagnosis here",
+    "recommended_actions": [
+        "Specific action 1",
+        "Specific action 2",
+        "etc..."
+    ],
+    "risk_assessment": "Your detailed risk assessment here",
+    "next_steps": [
+        "Specific next step 1",
+        "Specific next step 2",
+        "etc..."
+    ]
+}}"""
+
+            logger.info("Querying LLM for medical analysis")
+            # Query the LLM
+            result = await self._query_llm(prompt)
             
-            # Process simulation steps
-            steps_result = []
-            for step in simulation_request.steps:
-                step_result = {
-                    "step": step.step,
-                    "description": step.description,
-                    "actions": []
+            try:
+                logger.info("Parsing LLM response")
+                logger.debug(f"Raw LLM response: {result}")
+                response_data = json.loads(result)
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to parse LLM response as JSON: {str(e)}")
+                logger.error(f"Raw response: {result}")
+                response_data = {
+                    "diagnosis": "Error: Unable to generate diagnosis",
+                    "recommended_actions": [],
+                    "risk_assessment": "Error: Unable to assess risk",
+                    "next_steps": []
                 }
-                
-                for action in step.actions:
-                    # Process each action using M3 optimization if available
-                    if self.m3_enabled:
-                        action_result = self._process_action_m3(action)
-                    else:
-                        action_result = self._process_action_cpu(action)
-                    step_result["actions"].append(action_result)
-                
-                steps_result.append(step_result)
             
-            return {
-                "simulation_id": scenario_id,
-                "results": {
-                    "steps": steps_result,
-                    "completion_time": datetime.utcnow().isoformat()
-                }
-            }
+            logger.info("Preparing simulation response")
+            # Prepare the response
+            return SimulationResponse(
+                diagnosis=response_data.get("diagnosis", ""),
+                recommended_actions=response_data.get("recommended_actions", []),
+                vital_signs={
+                    "current": request.patient_data.vital_signs.dict() if request.patient_data and request.patient_data.vital_signs else {},
+                    "trends": []
+                },
+                risk_assessment=response_data.get("risk_assessment", ""),
+                next_steps=response_data.get("next_steps", [])
+            )
             
         except Exception as e:
-            logger.error(f"Error in scenario simulation: {str(e)}")
+            logger.error(f"Error in simulation: {str(e)}")
+            raise Exception(f"Simulation error: {str(e)}")
+
+    async def validate_protocol(self, request: ValidationRequest) -> ValidationResponse:
+        """Validate a healthcare protocol."""
+        try:
+            # Prepare the prompt
+            prompt = f"""You are a medical protocol validator. Analyze the following healthcare protocol and provide validation feedback:
+
+Protocol: {request.protocol}
+
+Steps:
+{json.dumps(request.steps, indent=2)}
+
+Provide your analysis in JSON format with the following structure:
+{{
+    "is_valid": true/false,
+    "score": 0-100,
+    "feedback": ["feedback1", "feedback2", ...],
+    "references": ["reference1", "reference2", ...]
+}}"""
+
+            # Query the LLM
+            result = await self._query_llm(prompt)
+            
+            try:
+                response_data = json.loads(result)
+            except json.JSONDecodeError:
+                logger.error("Failed to parse LLM response as JSON")
+                response_data = {
+                    "is_valid": False,
+                    "score": 0,
+                    "feedback": ["Error: Unable to validate protocol"],
+                    "references": []
+                }
+            
+            # Prepare the response
+            return ValidationResponse(
+                is_valid=response_data.get("is_valid", False),
+                score=float(response_data.get("score", 0)),
+                feedback=response_data.get("feedback", []),
+                references=response_data.get("references", [])
+            )
+            
+        except Exception as e:
+            logger.error(f"Error in validation: {str(e)}")
             raise
 
     async def validate_protocol(

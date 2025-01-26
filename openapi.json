@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Healthcare Simulation API",
-    "description": "API for healthcare simulation, patient analysis, and protocol validation with quantum-safe security and M3 optimization",
+    "description": "API for healthcare simulation with integrated medical LLM model (phi_lora_3b_medical_healthcaremagic_gguf)",
     "version": "0.2.0",
     "contact": {
       "name": "Healthcare Simulation Team",
@@ -18,13 +18,13 @@
   "paths": {
     "/v1/healthcare/simulate": {
       "post": {
-        "summary": "Simulate Healthcare Scenario",
-        "description": "Simulate a healthcare scenario and get step-by-step guidance",
-        "operationId": "simulate_scenario",
+        "summary": "Simulate healthcare scenario",
+        "description": "Process a healthcare simulation scenario using advanced medical LLM model",
+        "operationId": "simulate_healthcare_scenario",
         "tags": ["Healthcare Simulation"],
         "security": [
           {
-            "ApiKeyAuth": []
+            "APIKeyHeader": []
           }
         ],
         "requestBody": {
@@ -39,7 +39,7 @@
         },
         "responses": {
           "200": {
-            "description": "Successful simulation",
+            "description": "Successful simulation response",
             "content": {
               "application/json": {
                 "schema": {
@@ -49,7 +49,7 @@
             }
           },
           "401": {
-            "description": "Unauthorized",
+            "description": "Invalid API key",
             "content": {
               "application/json": {
                 "schema": {
@@ -58,8 +58,8 @@
               }
             }
           },
-          "422": {
-            "description": "Validation Error",
+          "500": {
+            "description": "Internal server error or medical LLM model error",
             "content": {
               "application/json": {
                 "schema": {
@@ -73,13 +73,13 @@
     },
     "/v1/healthcare/validate": {
       "post": {
-        "summary": "Validate Healthcare Protocol",
-        "description": "Validate healthcare protocols against established guidelines",
+        "summary": "Validate healthcare protocol",
+        "description": "Validate a healthcare protocol against established guidelines",
         "operationId": "validate_protocol",
         "tags": ["Healthcare Simulation"],
         "security": [
           {
-            "ApiKeyAuth": []
+            "APIKeyHeader": []
           }
         ],
         "requestBody": {
@@ -94,7 +94,7 @@
         },
         "responses": {
           "200": {
-            "description": "Successful validation",
+            "description": "Successful validation response",
             "content": {
               "application/json": {
                 "schema": {
@@ -104,7 +104,7 @@
             }
           },
           "401": {
-            "description": "Unauthorized",
+            "description": "Invalid API key",
             "content": {
               "application/json": {
                 "schema": {
@@ -113,8 +113,8 @@
               }
             }
           },
-          "422": {
-            "description": "Validation Error",
+          "500": {
+            "description": "Internal server error",
             "content": {
               "application/json": {
                 "schema": {
@@ -128,8 +128,8 @@
     },
     "/health": {
       "get": {
-        "summary": "Health Check",
-        "description": "Check the health status of the API",
+        "summary": "Health check",
+        "description": "Check the health status of the API and its components",
         "operationId": "health_check",
         "tags": ["System"],
         "responses": {
@@ -142,27 +142,87 @@
                   "properties": {
                     "status": {
                       "type": "string",
-                      "enum": ["healthy"]
+                      "enum": ["healthy", "unhealthy"]
+                    },
+                    "components": {
+                      "type": "object",
+                      "properties": {
+                        "api": {
+                          "type": "string",
+                          "enum": ["up", "down"]
+                        },
+                        "database": {
+                          "type": "string",
+                          "enum": ["up", "down"]
+                        },
+                        "medical_llm": {
+                          "type": "string",
+                          "enum": ["up", "down"]
+                        }
+                      }
                     },
                     "timestamp": {
                       "type": "string",
                       "format": "date-time"
-                    },
-                    "version": {
-                      "type": "string"
-                    },
-                    "database_connection": {
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/healthcare/model/test": {
+      "get": {
+        "tags": ["Healthcare"],
+        "summary": "Test Medical LLM Model Connection",
+        "description": "Tests the connection to the medical LLM model and returns model information and M3 optimization status",
+        "operationId": "test_model_connection",
+        "responses": {
+          "200": {
+            "description": "Successful connection to the model",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
                       "type": "string",
-                      "enum": ["ok"]
+                      "example": "connected"
                     },
-                    "environment": {
-                      "type": "string"
+                    "model_endpoint": {
+                      "type": "string",
+                      "example": "http://10.100.102.100:1234"
                     },
-                    "m3_optimizer": {
-                      "type": "string"
+                    "model_name": {
+                      "type": "string",
+                      "example": "phi_lora_3b_medical_healthcaremagic_gguf"
                     },
-                    "metal_framework": {
-                      "type": "string"
+                    "model_info": {
+                      "type": "object",
+                      "description": "Additional model information"
+                    },
+                    "m3_optimization": {
+                      "type": "object",
+                      "properties": {
+                        "metal_enabled": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "compute_units": {
+                          "type": "string",
+                          "example": "all"
+                        },
+                        "precision": {
+                          "type": "string",
+                          "example": "float16"
+                        }
+                      }
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
                     }
                   }
                 }
@@ -170,11 +230,33 @@
             }
           },
           "503": {
-            "description": "System is unhealthy",
+            "description": "Service Unavailable - Model endpoint is not responding",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "type": "object",
+                  "properties": {
+                    "detail": {
+                      "type": "string",
+                      "example": "Error connecting to model: Connection refused"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Gateway Timeout - Connection to model timed out",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "detail": {
+                      "type": "string",
+                      "example": "Connection to model timed out"
+                    }
+                  }
                 }
               }
             }
@@ -198,53 +280,76 @@
       "VitalSigns": {
         "type": "object",
         "properties": {
-          "❤️ דופק": {
+          "heart_rate": {
             "type": "object",
             "properties": {
               "value": {
-                "type": "string"
+                "type": "number"
               },
               "unit": {
                 "type": "string"
               }
-            },
-            "description": "Heart rate"
+            }
           },
-          "🫁 נשימות": {
+          "blood_pressure": {
             "type": "object",
             "properties": {
-              "value": {
-                "type": "string"
+              "systolic": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": "number"
+                  },
+                  "unit": {
+                    "type": "string"
+                  }
+                }
               },
-              "unit": {
-                "type": "string"
+              "diastolic": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": "number"
+                  },
+                  "unit": {
+                    "type": "string"
+                  }
+                }
               }
-            },
-            "description": "Respiratory rate"
+            }
           },
-          "🌡️ חום": {
+          "respiratory_rate": {
             "type": "object",
             "properties": {
               "value": {
-                "type": "string"
+                "type": "number"
               },
               "unit": {
                 "type": "string"
               }
-            },
-            "description": "Temperature"
+            }
           },
-          "⚡ לחץ דם": {
+          "temperature": {
             "type": "object",
             "properties": {
               "value": {
-                "type": "string"
+                "type": "number"
               },
               "unit": {
                 "type": "string"
               }
-            },
-            "description": "Blood pressure"
+            }
+          },
+          "oxygen_saturation": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "number"
+              },
+              "unit": {
+                "type": "string"
+              }
+            }
           }
         }
       },
@@ -294,125 +399,197 @@
       },
       "SimulationRequest": {
         "type": "object",
-        "required": ["title", "actors", "steps"],
         "properties": {
-          "title": {
+          "scenario": {
             "type": "string",
-            "description": "Simulation scenario title"
+            "description": "Healthcare scenario to simulate",
+            "example": "Patient presents with chest pain and shortness of breath"
           },
-          "actors": {
+          "patient_data": {
+            "type": "object",
+            "properties": {
+              "age": {
+                "type": "integer",
+                "description": "Patient age in years",
+                "example": 65
+              },
+              "gender": {
+                "type": "string",
+                "enum": ["male", "female", "other"],
+                "example": "male"
+              },
+              "vital_signs": {
+                "type": "object",
+                "properties": {
+                  "heart_rate": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": "number",
+                        "example": 85
+                      },
+                      "unit": {
+                        "type": "string",
+                        "example": "bpm"
+                      }
+                    }
+                  },
+                  "blood_pressure": {
+                    "type": "object",
+                    "properties": {
+                      "systolic": {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": "number",
+                            "example": 140
+                          },
+                          "unit": {
+                            "type": "string",
+                            "example": "mmHg"
+                          }
+                        }
+                      },
+                      "diastolic": {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": "number",
+                            "example": 90
+                          },
+                          "unit": {
+                            "type": "string",
+                            "example": "mmHg"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "respiratory_rate": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": "number",
+                        "example": 18
+                      },
+                      "unit": {
+                        "type": "string",
+                        "example": "breaths/min"
+                      }
+                    }
+                  },
+                  "temperature": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": "number",
+                        "example": 37.2
+                      },
+                      "unit": {
+                        "type": "string",
+                        "example": "°C"
+                      }
+                    }
+                  },
+                  "oxygen_saturation": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": "number",
+                        "example": 96
+                      },
+                      "unit": {
+                        "type": "string",
+                        "example": "%"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "required": ["scenario"]
+      },
+      "SimulationResponse": {
+        "type": "object",
+        "properties": {
+          "diagnosis": {
+            "type": "string",
+            "description": "Preliminary diagnosis based on scenario",
+            "example": "Suspected acute coronary syndrome"
+          },
+          "recommended_actions": {
             "type": "array",
             "items": {
               "type": "string"
             },
-            "description": "Participants in the simulation"
+            "description": "List of recommended actions",
+            "example": [
+              "Administer aspirin 325mg",
+              "Obtain 12-lead ECG",
+              "Start oxygen therapy"
+            ]
           },
-          "steps": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Step"
-            }
-          }
-        }
-      },
-      "NextStep": {
-        "type": "object",
-        "required": ["action", "protocol_reference", "expected_outcome"],
-        "properties": {
-          "action": {
-            "type": "string",
-            "description": "Next action to take"
-          },
-          "protocol_reference": {
-            "type": "string",
-            "description": "Reference to medical protocol"
-          },
-          "expected_outcome": {
-            "type": "string",
-            "description": "Expected outcome of the action"
-          }
-        }
-      },
-      "SimulationResponse": {
-        "type": "object",
-        "required": ["scenario_id", "current_state", "next_steps", "feedback"],
-        "properties": {
-          "scenario_id": {
-            "type": "string",
-            "description": "Unique identifier for the simulation"
-          },
-          "current_state": {
+          "vital_signs": {
             "type": "object",
+            "description": "Current vital signs with trends",
             "properties": {
-              "patient_status": {
-                "$ref": "#/components/schemas/PatientStatus"
-              },
-              "vital_signs": {
+              "current": {
                 "$ref": "#/components/schemas/VitalSigns"
               },
-              "current_interventions": {
+              "trends": {
                 "type": "array",
                 "items": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/VitalSigns"
                 }
               }
             }
+          },
+          "risk_assessment": {
+            "type": "string",
+            "description": "Risk assessment based on scenario",
+            "example": "High risk for acute cardiac event"
           },
           "next_steps": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/NextStep"
-            }
-          },
-          "feedback": {
-            "type": "object",
-            "properties": {
-              "correct_actions": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
-              "suggestions": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
-              "protocol_adherence": {
-                "type": "number",
-                "minimum": 0,
-                "maximum": 100,
-                "description": "Protocol adherence score"
-              }
-            }
+              "type": "string"
+            },
+            "description": "Recommended next steps",
+            "example": [
+              "Arrange immediate transfer to cardiac catheterization lab",
+              "Monitor vital signs every 5 minutes",
+              "Prepare for possible intervention"
+            ]
           }
         }
       },
       "ValidationRequest": {
         "type": "object",
-        "required": ["protocol_type", "actions"],
         "properties": {
-          "protocol_type": {
-            "$ref": "#/components/schemas/ProtocolType"
+          "protocol": {
+            "type": "string",
+            "description": "Healthcare protocol to validate",
+            "example": "ACLS chest pain protocol"
           },
-          "actions": {
+          "steps": {
             "type": "array",
             "items": {
               "type": "string"
             },
-            "description": "List of actions to validate"
-          },
-          "patient_context": {
-            "type": "object",
-            "additionalProperties": true,
-            "description": "Additional patient context"
+            "description": "Steps in the protocol",
+            "example": [
+              "Assess airway and breathing",
+              "Obtain vital signs",
+              "Administer aspirin"
+            ]
           }
-        }
+        },
+        "required": ["protocol", "steps"]
       },
       "ValidationResponse": {
         "type": "object",
-        "required": ["is_valid", "score"],
         "properties": {
           "is_valid": {
             "type": "boolean",
@@ -420,46 +597,23 @@
           },
           "score": {
             "type": "number",
+            "description": "Validation score (0-100)",
             "minimum": 0,
-            "maximum": 100,
-            "description": "Validation score"
+            "maximum": 100
           },
           "feedback": {
             "type": "array",
             "items": {
-              "type": "object",
-              "properties": {
-                "step": {
-                  "type": "integer"
-                },
-                "action": {
-                  "type": "string"
-                },
-                "is_correct": {
-                  "type": "boolean"
-                },
-                "correction": {
-                  "type": "string"
-                }
-              }
-            }
+              "type": "string"
+            },
+            "description": "Feedback on protocol steps"
           },
           "references": {
             "type": "array",
             "items": {
-              "type": "object",
-              "properties": {
-                "protocol": {
-                  "type": "string"
-                },
-                "section": {
-                  "type": "string"
-                },
-                "details": {
-                  "type": "string"
-                }
-              }
-            }
+              "type": "string"
+            },
+            "description": "Relevant medical references"
           }
         }
       },
@@ -479,7 +633,7 @@
       }
     },
     "securitySchemes": {
-      "ApiKeyAuth": {
+      "APIKeyHeader": {
         "type": "apiKey",
         "in": "header",
         "name": "X-API-Key"

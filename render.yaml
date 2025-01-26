@@ -7,33 +7,32 @@ services:
     repo: https://github.com/IgorHWebDev/healthcare-simulation-api
     plan: free
     region: frankfurt
+    env: python
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn src.api.main:app --host 0.0.0.0 --port $PORT
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.5
-      - key: PORT
-        value: 8000
+      - key: DB_USER
+        sync: false
+      - key: DB_SECRET
+        sync: false
+      - key: DB_NAME
+        value: healthcare_db
       - key: API_KEY
         sync: false
       - key: ENVIRONMENT
         value: production
       - key: DEBUG
-        value: false
-      - key: DB_USER
-        value: healthcare
-      - key: DB_PASSWORD
-        sync: false
-      - key: DB_NAME
-        value: healthcare_db
-      - key: DB_HOST
-        value: localhost
-      - key: DB_PORT
-        value: 5432
+        value: "false"
+      - key: PORT
+        value: "8000"
       - key: M3_OPTIMIZER_ENABLED
         value: "true"
       - key: METAL_FRAMEWORK_ENABLED
         value: "true"
+      - key: MEDICAL_LLM_MODEL
+        value: healthcare-llm:latest
+      - key: MEDICAL_LLM_ENDPOINT
+        value: http://localhost:11434
     healthCheckPath: /health
     autoDeploy: true
 

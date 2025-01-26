@@ -8,27 +8,30 @@ NC='\033[0m'
 
 echo -e "${YELLOW}Starting deployment to Render...${NC}"
 
-# Check if required environment variables are set
-required_vars=(
-    "DB_USER"
-    "DB_SECRET"
-    "DB_NAME"
-    "REDIS_SECRET"
-    "JWT_SECRET"
-)
-
-missing_vars=()
-for var in "${required_vars[@]}"; do
-    if [ -z "${!var}" ]; then
-        missing_vars+=("$var")
-    fi
-done
-
-if [ ${#missing_vars[@]} -ne 0 ]; then
-    echo -e "${RED}Error: Missing required environment variables:${NC}"
-    printf '%s\n' "${missing_vars[@]}"
+# Check for required environment variables
+if [ -z "$RENDER_DB_USER" ] || [ -z "$RENDER_DB_PASSWORD" ] || [ -z "$RENDER_API_KEY" ]; then
+    echo -e "${RED}Error: Missing required environment variables${NC}"
+    echo "Please set the following environment variables:"
+    echo "- RENDER_DB_USER"
+    echo "- RENDER_DB_PASSWORD"
+    echo "- RENDER_API_KEY"
     exit 1
 fi
+
+# Export environment variables
+export DB_USER=$RENDER_DB_USER
+export DB_SECRET=$RENDER_DB_PASSWORD
+export DB_NAME=healthcare_db
+export API_KEY=$RENDER_API_KEY
+export ENVIRONMENT=production
+export DEBUG=false
+export PORT=8000
+export M3_OPTIMIZER_ENABLED=true
+export METAL_FRAMEWORK_ENABLED=true
+
+# Configure medical LLM
+export MEDICAL_LLM_MODEL=healthcare-llm:latest
+export MEDICAL_LLM_ENDPOINT=http://localhost:11434
 
 # Verify render.yaml exists
 if [ ! -f "render.yaml" ]; then
@@ -56,14 +59,6 @@ if ! pip install -r requirements.txt --dry-run > /dev/null 2>&1; then
     exit 1
 fi
 echo -e "${GREEN}All packages verified successfully${NC}"
-
-# Check database schema
-echo -e "${YELLOW}Verifying database schema...${NC}"
-if [ ! -f "database/init/01_schema.sql" ]; then
-    echo -e "${RED}Error: Database schema file not found${NC}"
-    exit 1
-fi
-echo -e "${GREEN}Database schema verified${NC}"
 
 # Check API health endpoint
 echo -e "${YELLOW}Verifying health check endpoint...${NC}"

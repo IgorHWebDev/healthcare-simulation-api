@@ -2,16 +2,76 @@
 Healthcare data models for the API.
 """
 from pydantic import BaseModel, Field
-from typing import List, Dict, Any, Optional
-from datetime import datetime, date
-from uuid import UUID
+from typing import List, Dict, Optional, Any
+from enum import Enum
+from datetime import datetime
+
+class PatientStatusEnum(str, Enum):
+    """Patient status in Hebrew."""
+    STABLE = "יציב"
+    UNSTABLE = "לא יציב"
+    CRITICAL = "קריטי"
+
+class ProtocolType(str, Enum):
+    """Type of medical protocol."""
+    ACLS = "ACLS"
+    BLS = "BLS"
+    PALS = "PALS"
+    TRAUMA = "TRAUMA"
+
+class MeasurementValue(BaseModel):
+    """Model for measurement values with units."""
+    value: float
+    unit: str
+
+class BloodPressure(BaseModel):
+    """Model for blood pressure measurements."""
+    systolic: MeasurementValue
+    diastolic: MeasurementValue
 
 class VitalSigns(BaseModel):
-    blood_pressure: str
-    heart_rate: int
-    temperature: float
-    respiratory_rate: int
-    oxygen_saturation: int
+    """Model for vital signs measurements."""
+    heart_rate: MeasurementValue
+    blood_pressure: BloodPressure
+    respiratory_rate: MeasurementValue
+    temperature: MeasurementValue
+    oxygen_saturation: MeasurementValue
+
+class PatientData(BaseModel):
+    """Model for patient data."""
+    age: Optional[int] = None
+    gender: Optional[str] = Field(None, pattern="^(male|female|other)$")
+    vital_signs: Optional[VitalSigns] = None
+
+class SimulationRequest(BaseModel):
+    """Model for simulation request."""
+    scenario: str = Field(..., description="Healthcare scenario to simulate")
+    patient_data: Optional[PatientData] = None
+
+class SimulationResponse(BaseModel):
+    """Model for simulation response."""
+    diagnosis: str = Field(..., description="Preliminary diagnosis based on scenario")
+    recommended_actions: List[str] = Field(..., description="List of recommended actions")
+    vital_signs: Dict[str, Any] = Field(..., description="Current vital signs with trends")
+    risk_assessment: str = Field(..., description="Risk assessment based on scenario")
+    next_steps: List[str] = Field(..., description="Recommended next steps")
+
+class ValidationRequest(BaseModel):
+    """Model for validation request."""
+    protocol: str = Field(..., description="Healthcare protocol to validate")
+    steps: List[str] = Field(..., description="Steps in the protocol")
+
+class ValidationResponse(BaseModel):
+    """Model for validation response."""
+    is_valid: bool = Field(..., description="Whether the protocol is valid")
+    score: float = Field(..., description="Validation score (0-100)", ge=0, le=100)
+    feedback: List[str] = Field(..., description="Feedback on protocol steps")
+    references: List[str] = Field(..., description="Relevant medical references")
+
+class Error(BaseModel):
+    """Model for error responses."""
+    code: str = Field(..., description="Error code")
+    message: str = Field(..., description="Error message")
 
 class LabResult(BaseModel):
     test_name: str
@@ -28,20 +88,17 @@ class Medication(BaseModel):
     medication_name: str
     dosage: Optional[str] = None
     frequency: Optional[str] = None
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
 
-class PatientData(BaseModel):
-    mrn: str
-    first_name: str
-    last_name: str
-    date_of_birth: str
-    age: int
-    gender: str
-    conditions: List[Diagnosis]
-    medications: List[Medication]
-    vital_signs: VitalSigns
-    lab_results: List[LabResult]
+class PatientStatus(BaseModel):
+    """Model for patient status information."""
+    status_type: PatientStatusEnum = Field(..., description="Current status of the patient")
+    vital_signs: Dict[str, float] = Field(..., description="Current vital signs")
+    last_update: str = Field(..., description="Timestamp of the last status update")
+    notes: Optional[str] = Field(None, description="Additional notes about patient status")
+    risk_level: Optional[int] = Field(None, ge=0, le=10, description="Risk level from 0-10")
+    monitoring_required: bool = Field(default=False, description="Whether continuous monitoring is required")
 
 class PatientCreateRequest(BaseModel):
     patient_data: PatientData
