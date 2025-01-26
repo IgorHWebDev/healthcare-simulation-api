@@ -26,12 +26,21 @@ export API_KEY=$RENDER_API_KEY
 export ENVIRONMENT=production
 export DEBUG=false
 export PORT=8000
+
+# M3 and Metal framework configuration
 export M3_OPTIMIZER_ENABLED=true
 export METAL_FRAMEWORK_ENABLED=true
+export METAL_DEVICE_WRITABLE=true
+export METAL_COMPUTE_UNITS=all
+export METAL_MEMORY_LIMIT=8G
+export METAL_PRECISION=float16
 
-# Configure medical LLM
+# Ollama configuration
 export MEDICAL_LLM_MODEL=healthcare-llm:latest
 export MEDICAL_LLM_ENDPOINT=http://localhost:11434
+export OLLAMA_HOST=http://localhost:11434
+export OLLAMA_MODEL=healthcare-llm:latest
+export OLLAMA_METAL_ENABLED=true
 
 # Verify render.yaml exists
 if [ ! -f "render.yaml" ]; then
@@ -49,16 +58,15 @@ fi
 echo -e "${YELLOW}Running pre-deployment checks...${NC}"
 
 # Check Python version
-python_version=$(python3 --version 2>&1 | awk '{print $2}')
-echo -e "${GREEN}Python version: ${python_version}${NC}"
+echo "Python version: $(python3 --version)"
 
-# Check if all required packages are installed
-echo -e "${YELLOW}Verifying Python packages...${NC}"
-if ! pip install -r requirements.txt --dry-run > /dev/null 2>&1; then
-    echo -e "${RED}Error: Some required packages cannot be installed${NC}"
+# Verify Python packages
+echo "Verifying Python packages..."
+if ! pip install -r requirements.txt; then
+    echo -e "${RED}Error: Failed to install Python packages${NC}"
     exit 1
 fi
-echo -e "${GREEN}All packages verified successfully${NC}"
+echo "All packages verified successfully"
 
 # Check API health endpoint
 echo -e "${YELLOW}Verifying health check endpoint...${NC}"
@@ -68,8 +76,9 @@ if ! grep -q "health_check" src/api/main.py; then
 fi
 echo -e "${GREEN}Health check endpoint verified${NC}"
 
-# Instructions for manual deployment
-echo -e "\n${GREEN}Pre-deployment checks completed successfully!${NC}"
+echo -e "${GREEN}Pre-deployment checks completed successfully!${NC}"
+
+# Display deployment instructions
 echo -e "\n${YELLOW}To deploy to Render:${NC}"
 echo "1. Go to https://dashboard.render.com"
 echo "2. Click 'New +' and select 'Web Service'"
@@ -77,9 +86,11 @@ echo "3. Connect your GitHub repository"
 echo "4. Select the 'healthcare-simulation-api' repository"
 echo "5. Render will automatically detect the render.yaml configuration"
 echo "6. Click 'Create Web Service'"
+
 echo -e "\n${YELLOW}After deployment:${NC}"
 echo "1. Verify the service is running by checking the health endpoint"
 echo "2. Monitor the logs for any issues"
 echo "3. Set up monitoring alerts"
 echo "4. Configure SSL/TLS certificates"
+
 echo -e "\n${GREEN}Your service will be available at: https://healthcare-simulation-api.onrender.com${NC}"

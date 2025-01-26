@@ -28,10 +28,24 @@ services:
         value: "true"
       - key: METAL_FRAMEWORK_ENABLED
         value: "true"
+      - key: METAL_DEVICE_WRITABLE
+        value: "true"
+      - key: METAL_COMPUTE_UNITS
+        value: "all"
+      - key: METAL_MEMORY_LIMIT
+        value: "8G"
+      - key: METAL_PRECISION
+        value: "float16"
       - key: MEDICAL_LLM_MODEL
         value: healthcare-llm:latest
       - key: MEDICAL_LLM_ENDPOINT
         value: http://localhost:11434
+      - key: OLLAMA_HOST
+        value: http://localhost:11434
+      - key: OLLAMA_MODEL
+        value: healthcare-llm:latest
+      - key: OLLAMA_METAL_ENABLED
+        value: "true"
     healthCheckPath: /health
     autoDeploy: true
 
