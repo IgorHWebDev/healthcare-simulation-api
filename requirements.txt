@@ -7,10 +7,6 @@ httpx==0.26.0
 python-multipart==0.0.6
 python-dotenv==1.0.0
 PyJWT==2.8.0
-pyobjc-framework-Metal==10.1
-pyobjc-framework-MetalKit==10.1
-numpy==1.26.2
-torch==2.1.1
 
 # Database Dependencies
 psycopg2-binary==2.9.9
@@ -42,3 +38,6 @@ statsd==4.0.1
 # Performance Dependencies
 uvloop==0.19.0
 httptools==0.6.1
+
+# Documentation
+openapi-schema-pydantic==1.2.4

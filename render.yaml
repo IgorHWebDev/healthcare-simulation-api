@@ -5,11 +5,13 @@ services:
     name: healthcare-simulation-api
     runtime: python
     repo: https://github.com/IgorHWebDev/healthcare-simulation-api
+    buildCommand: |
+      python -m pip install --upgrade pip
+      pip install -r requirements.txt
+    startCommand: uvicorn src.api.main:app --host 0.0.0.0 --port $PORT
     plan: free
     region: frankfurt
     env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn src.api.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.5
@@ -46,7 +48,9 @@ services:
   - type: worker
     name: healthcare-worker
     runtime: python
-    buildCommand: pip install -r requirements.txt
+    buildCommand: |
+      python -m pip install --upgrade pip
+      pip install -r requirements.txt
     startCommand: celery -A src.api.worker.celery worker --loglevel=info
     envVars:
       - key: PYTHON_VERSION
